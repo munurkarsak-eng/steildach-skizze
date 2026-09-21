@@ -1,6 +1,6 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P10.2</title>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P10.3</title>
 <style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#eef1f3;overflow:hidden}header{height:48px;background:#17202a;color:#fff;padding:13px}#bar{height:50px;background:#fff;padding:6px;display:flex;gap:6px;overflow:auto}button,input{padding:7px;border:1px solid #999;border-radius:7px;background:#fff}button.on,.go{background:#176b2c;color:#fff}#w{height:calc(100vh - 98px);position:relative}canvas{width:100%;height:100%;touch-action:none;background:#fafafa}#v{background:#f7f8f9}#msg{position:absolute;left:8px;bottom:12px;background:#17202ae8;color:#fff;padding:8px;border-radius:7px;font-size:12px}</style></head><body>
-<header><b>Steildach Skizze</b> &nbsp; <small>P10.2 · 21.09.2026</small></header>
+<header><b>Steildach Skizze</b> &nbsp; <small>P10.3 · 21.09.2026</small></header>
 <div id="bar">
 <button id="bd" class="on">Dachumriss</button>
 <span>Dachform</span>
@@ -76,7 +76,7 @@ function pl(a,col,closed,ms){
  a.forEach((p,i)=>{x.beginPath();x.arc(p.x,p.y,5,0,7);x.fillStyle=col;x.fill();x.fillStyle="#111";x.font="12px Arial";x.fillText("P"+(i+1),p.x+7,p.y-7)});
  let n=closed?a.length:a.length-1;for(let i=0;i<n;i++){let q=a[i],r=a[(i+1)%a.length],val=measure(a,ms,i);x.fillStyle="#111";x.font="bold 12px Arial";x.fillText(val.toFixed(2)+" m",(q.x+r.x)/2+5,(q.y+r.y)/2-5)}
 }
-function dr(){x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);x.clearRect(0,0,c.clientWidth,c.clientHeight);let GRID=15;x.strokeStyle="#e2e5e8";x.lineWidth=1;for(let a=0;a<c.clientWidth;a+=GRID){x.beginPath();x.moveTo(a,0);x.lineTo(a,c.clientHeight);x.stroke()}for(let a=0;a<c.clientHeight;a+=GRID){x.beginPath();x.moveTo(0,a);x.lineTo(c.clientWidth,a);x.stroke()}x.save();x.translate(viewX,viewY);x.scale(viewScale,viewScale);pl(d,"#198038",dc,dm);drawRoofGuide();drawParts();x.restore()}
+function dr(){x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);x.clearRect(0,0,c.clientWidth,c.clientHeight);let GRID=15;x.strokeStyle="#c7cdd2";x.lineWidth=1;for(let a=0;a<c.clientWidth;a+=GRID){x.beginPath();x.moveTo(a,0);x.lineTo(a,c.clientHeight);x.stroke()}for(let a=0;a<c.clientHeight;a+=GRID){x.beginPath();x.moveTo(0,a);x.lineTo(c.clientWidth,a);x.stroke()}x.save();x.translate(viewX,viewY);x.scale(viewScale,viewScale);pl(d,"#198038",dc,dm);drawRoofGuide();drawParts();x.restore()}
 function edgeHit(p,a,closed){let n=closed?a.length:a.length-1,best=-1,bd=24;for(let i=0;i<n;i++){let A=a[i],B=a[(i+1)%a.length],vx=B.x-A.x,vy=B.y-A.y,L=vx*vx+vy*vy,t=L?Math.max(0,Math.min(1,((p.x-A.x)*vx+(p.y-A.y)*vy)/L)):0,q={x:A.x+t*vx,y:A.y+t*vy},dd=dist(p,q);if(dd<bd){bd=dd;best=i}}return best}
 let edgeEdit=null;
 function setEdge(a,ms,i){edgeEdit={a,ms,i};$("#edgeTitle").textContent="Dach – Kante K"+(i+1)+" in Meter";$("#edgeVal").value=measure(a,ms,i).toFixed(2);$("#edgeDlg").style.display="flex";setTimeout(()=>{$("#edgeVal").focus();$("#edgeVal").select()},50)}
@@ -111,7 +111,7 @@ $("#squareBtn").onclick=()=>{if(!dc||d.length!==4){$("#msg").textContent="Erst d
 function md(m){mode="d"}$("#bd").onclick=()=>{mode="d";$("#bd").classList.add("on")};
 c.onpointerdown=e=>{c.setPointerCapture(e.pointerId);let r=c.getBoundingClientRect(),p={x:(e.clientX-r.left-viewX)/viewScale,y:(e.clientY-r.top-viewY)/viewScale},a=d,closed=dc,ms=dm;
  let tk=triHit(p);if(tk){openTri(tk);return}
-  let pi=partAt(p);if(pi>=0){let q=parts[pi];partPress={i:pi,start:p,t:Date.now(),moved:false};partDrag={i:pi,ox:p.x-q.x,oy:p.y-q.y,old:{...q}};return}
+  let pi=partAt(p);if(pi>=0){let q=parts[pi];partPress={i:pi,start:{...p},t:Date.now(),moved:false};partDrag={i:pi,ox:p.x-q.x,oy:p.y-q.y,old:{...q}};$("#msg").textContent=q.name+": ziehen = verschieben · kurz tippen = Maße/Position";return}
  if(closed){let ci=cornerHit(p,a);if(ci>=0){cornerDrag={a,i:ci,old:a.map(q=>({...q}))};$("#msg").textContent="Eckpunkt ziehen.";return}let ei=edgeHit(p,a,true);if(ei>=0){press={p,t:Date.now(),a,ms,ei,moved:false};return}if(inside(p,a)){press={p,t:Date.now(),a,ms,ei:-1,moved:false};return}return}
  if(a.length>=3&&near(p,a[0])){dc=true;lastAction.push({kind:"close",m:mode});$("#msg").textContent="Dach fertig. Kante antippen = Metermaß. Eckpunkte ziehen; länger in Fläche drücken = verschieben.";dr();return}
  a.push(p);ms.push(0);lastAction.push({kind:"add",a,ms});dr()
@@ -121,6 +121,8 @@ c.onpointermove=e=>{let rr=c.getBoundingClientRect(),pp={x:(e.clientX-rr.left-vi
  if(drag){let dx=p.x-drag.start.x,dy=p.y-drag.start.y;drag.a.forEach((q,i)=>{q.x=drag.base[i].x+dx;q.y=drag.base[i].y+dy});dr()}
 };
 c.onpointerup=e=>{if(partDrag){let pd=partDrag,pp=partPress;partDrag=null;partPress=null;if(pp&&!pp.moved&&Date.now()-pp.t<650)editPart(pd.i);else lastAction.push({kind:"partmove",i:pd.i,old:pd.old});dr();return}if(cornerDrag){lastAction.push({kind:"shape",a:cornerDrag.a,old:cornerDrag.old});cornerDrag=null;dr();return}if(!press)return;if(drag){lastAction.push({kind:"move",a:drag.a,old:drag.base});drag=null;press=null;dr();return}if(!press.moved&&Date.now()-press.t<650&&press.ei>=0)setEdge(press.a,press.ms,press.ei);press=null};
+
+c.onpointercancel=e=>{partDrag=null;partPress=null;cornerDrag=null;drag=null;press=null};
 $("#neu").onclick=()=>{h=[];d=[];hm=[];dm=[];parts=[];hc=true;dc=false;lastAction=[];viewScale=1;viewX=viewY=0;walmRun=null;walmRise=null;mode="d";$("#bd").classList.add("on");updateRoofData();dr();d3()};
 let undo=document.createElement("button");undo.textContent="↶ Schritt zurück";$("#neu").before(undo);undo.onclick=()=>{let z=lastAction.pop();if(!z)return;if(z.kind==="add"){z.a.pop();z.ms.pop()}else if(z.kind==="close"){dc=false}else if(z.kind==="measure")z.ms[z.i]=z.old;else if(z.kind==="point")z.a[z.j]=z.old;else if(z.kind==="move"||z.kind==="shape")z.a.forEach((q,i)=>Object.assign(q,z.old[i]));else if(z.kind==="partmove"&&parts[z.i])Object.assign(parts[z.i],z.old);dr()};
 
@@ -147,7 +149,7 @@ function drawParts(){
    }
  })
 }
-function partAt(pt){for(let i=parts.length-1;i>=0;i--){let q=parts[i],cx=q.x+q.w/2,cy=q.y+q.h/2,a=-(q.rot||0)*Math.PI/180,dx=pt.x-cx,dy=pt.y-cy,xx=dx*Math.cos(a)-dy*Math.sin(a),yy=dx*Math.sin(a)+dy*Math.cos(a);if(Math.abs(xx)<=q.w/2&&Math.abs(yy)<=q.h/2)return i}return -1}return -1}
+function partAt(pt){for(let i=parts.length-1;i>=0;i--){let q=parts[i];if(pt.x>=q.x-12/viewScale&&pt.x<=q.x+q.w+12/viewScale&&pt.y>=q.y-12/viewScale&&pt.y<=q.y+q.h+12/viewScale)return i}return -1}return -1}
 
 function roofBox(){
  if(!d.length)return null;
@@ -331,5 +333,5 @@ v.onpointerdown=e=>{v.setPointerCapture(e.pointerId);p3.set(e.pointerId,{x:e.cli
 v.onpointermove=e=>{if(!p3.has(e.pointerId))return;p3.set(e.pointerId,{x:e.clientX,y:e.clientY});if(p3.size===1&&drag3){rotZ=drag3.rz+(e.clientX-drag3.x)*.008;rotX=Math.max(-1.30,Math.min(-0.18,drag3.rx+(e.clientY-drag3.y)*.006));d3()}else if(p3.size===2&&pinch3){let a=[...p3.values()],dd=dist(a[0],a[1]);zoom3=Math.max(.45,Math.min(3,pinch3.z*dd/pinch3.d));d3()}};
 function end3(e){p3.delete(e.pointerId);drag3=null;if(p3.size<2)pinch3=null}v.onpointerup=end3;v.onpointercancel=end3;
 function roofChanged(){walmRun=null;walmRise=null;updateRoofData();dr();d3()}
-$("#roofType").onchange=roofChanged;updateRoofData();rs();
+$("#roofType").onchange=roofChanged;updateRoofData();rs();mode="d";$("#bd").classList.add("on");$("#msg").textContent="Dachumriss zeichnen: Punkte setzen. Kante antippen = Metermaß.";
 </script></body></html>

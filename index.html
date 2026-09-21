@@ -1,6 +1,6 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P10</title>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P10.1</title>
 <style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#eef1f3;overflow:hidden}header{height:48px;background:#17202a;color:#fff;padding:13px}#bar{height:50px;background:#fff;padding:6px;display:flex;gap:6px;overflow:auto}button,input{padding:7px;border:1px solid #999;border-radius:7px;background:#fff}button.on,.go{background:#176b2c;color:#fff}#w{height:calc(100vh - 98px);position:relative}canvas{width:100%;height:100%;touch-action:none;background:#fafafa}#v{background:#f7f8f9}#msg{position:absolute;left:8px;bottom:12px;background:#17202ae8;color:#fff;padding:8px;border-radius:7px;font-size:12px}</style></head><body>
-<header><b>Steildach Skizze</b> &nbsp; <small>P10 · 21.09.2026</small></header>
+<header><b>Steildach Skizze</b> &nbsp; <small>P10.1 · 21.09.2026</small></header>
 <div id="bar">
 <button id="bd" class="on">Dachumriss</button>
 <span>Dachform</span>
@@ -32,7 +32,12 @@
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
 <label>Länge m<input id="partL" type="number" step="0.10" inputmode="decimal" style="width:100%"></label>
 <label>Breite m<input id="partB" type="number" step="0.10" inputmode="decimal" style="width:100%"></label>
-<label>Höhe m<input id="partH" type="number" step="0.10" inputmode="decimal" style="width:100%"></label>
+<label>Höhe m<input id="partH" type="number" step="0.10" inputmode="decimal" style="width:100%"></label><label id="dormerTypeLbl" style="display:none;grid-column:1/3">Gaubenform
+<select id="dormerType" style="width:100%;padding:7px">
+<option value="shed">Schleppgaube</option>
+<option value="gable">Satteldachgaube</option>
+<option value="flat">Flachdachgaube</option>
+</select></label>
 <div id="partRoofFields" style="display:none;grid-column:1/3;border-top:1px solid #ddd;padding-top:10px">
 <label>Dachform<select id="partRoofType" style="width:100%;padding:7px"><option value="gable">Satteldach</option><option value="hip">Walmdach</option><option value="halfhip">Krüppelwalmdach</option><option value="pyramid">Zeltdach</option></select></label>
 <label>Dachneigung °<input id="partSlope" type="number" value="35" min="1" max="70" step="1" style="width:100%"></label>
@@ -118,21 +123,39 @@ function addPart(type){
  let names={roof:"Zweites Dach",dormer:"Gaube",chimney:"Schornstein",window:"Dachfenster"};
  let dims={roof:[4,3,2],dormer:[2.5,1.8,1.5],chimney:[.8,.6,1.2],window:[1.2,.9,.15]}[type];
  let cx=(c.clientWidth/2-viewX)/viewScale,cy=(c.clientHeight/2-viewY)/viewScale;
- parts.push({type,name:names[type],x:cx-dims[0]*PX/2,y:cy-dims[1]*PX/2,w:dims[0]*PX,h:dims[1]*PX,H:dims[2],roofType:"gable",slope:35});
+ parts.push({type,name:names[type],x:cx-dims[0]*PX/2,y:cy-dims[1]*PX/2,w:dims[0]*PX,h:dims[1]*PX,H:dims[2],roofType:"gable",slope:35,dormerType:"shed"});
  $("#msg").textContent=names[type]+" eingesetzt. Mit dem Finger ziehen; kurz antippen = Maße.";dr()
 }
 function drawParts(){
+
+ // Approximate the actual main-roof surface height at any 2D point.
+ function roofZCanvas(px,py){
+   let X=(px-minCanvasX)/PX,Y=(py-minCanvasY)/PX;
+   let minDX=Math.min(...D.map(q=>q.x)),maxDX=Math.max(...D.map(q=>q.x)),minDY=Math.min(...D.map(q=>q.y)),maxDY=Math.max(...D.map(q=>q.y));
+   if(typ==="gable"){
+     let spanY=maxDY-minDY,yy=Math.max(minDY,Math.min(maxDY,Y));
+     return rise*Math.max(0,1-Math.abs(yy-(minDY+maxDY)/2)/(spanY/2||1));
+   }
+   if(typ==="pyramid"){
+     let nx=Math.abs(X-(minDX+maxDX)/2)/((maxDX-minDX)/2||1),ny=Math.abs(Y-(minDY+maxDY)/2)/((maxDY-minDY)/2||1);
+     return rise*Math.max(0,1-Math.max(nx,ny));
+   }
+   // Hip/half-hip: use distance to nearest roof boundary, capped at ridge height.
+   let dx=Math.min(Math.max(0,X-minDX),Math.max(0,maxDX-X)),dy=Math.min(Math.max(0,Y-minDY),Math.max(0,maxDY-Y));
+   let run=Math.max(.01,walmRun||Q.span/2);
+   return Math.min(rise,rise*Math.max(0,Math.min(dx,dy))/run);
+ }
  parts.forEach(p=>{x.save();x.setLineDash([7,4]);x.lineWidth=3/viewScale;
  x.strokeStyle=p.type==="chimney"?"#7b4b32":p.type==="window"?"#1565c0":"#8e44ad";x.fillStyle=p.type==="chimney"?"#8d6e6366":p.type==="window"?"#64b5f666":"#ba68c844";
  x.fillRect(p.x,p.y,p.w,p.h);x.strokeRect(p.x,p.y,p.w,p.h);x.setLineDash([]);x.fillStyle="#111";x.font=(12/viewScale)+"px Arial";
  x.fillText(p.name+" "+(p.w/PX).toFixed(2)+"×"+(p.h/PX).toFixed(2)+" m",p.x+5/viewScale,p.y+16/viewScale);x.restore()})
 }
 function partAt(p){for(let i=parts.length-1;i>=0;i--){let q=parts[i];if(p.x>=q.x&&p.x<=q.x+q.w&&p.y>=q.y&&p.y<=q.y+q.h)return i}return -1}
-function editPart(i){partEdit=i;let p=parts[i];$("#partEditTitle").textContent=p.name;$("#partL").value=(p.w/PX).toFixed(2);$("#partB").value=(p.h/PX).toFixed(2);$("#partH").value=(p.H||0).toFixed(2);$("#partRoofFields").style.display=p.type==="roof"?"grid":"none";$("#partRoofType").value=p.roofType||"gable";$("#partSlope").value=p.slope||35;$("#partEditDlg").style.display="flex"}
+function editPart(i){partEdit=i;let p=parts[i];$("#partEditTitle").textContent=p.name;$("#partL").value=(p.w/PX).toFixed(2);$("#partB").value=(p.h/PX).toFixed(2);$("#partH").value=(p.H||0).toFixed(2);$("#partRoofFields").style.display=p.type==="roof"?"grid":"none";$("#dormerTypeLbl").style.display=p.type==="dormer"?"block":"none";$("#dormerType").value=p.dormerType||"shed";$("#partRoofType").value=p.roofType||"gable";$("#partSlope").value=p.slope||35;$("#partEditDlg").style.display="flex"}
 $("#partBtn").onclick=()=>$("#partDlg").style.display="flex";$("#partCancel").onclick=()=>$("#partDlg").style.display="none";
 document.querySelectorAll("[data-part]").forEach(b=>b.onclick=()=>{$("#partDlg").style.display="none";addPart(b.dataset.part)});
 $("#partEditCancel").onclick=()=>{$("#partEditDlg").style.display="none";partEdit=-1};
-$("#partEditOK").onclick=()=>{if(partEdit<0)return;let p=parts[partEdit],L=parseFloat(String($("#partL").value).replace(",",".")),B=parseFloat(String($("#partB").value).replace(",",".")),H=parseFloat(String($("#partH").value).replace(",","."));if(L>0)p.w=L*PX;if(B>0)p.h=B*PX;if(H>=0)p.H=H;if(p.type==="roof"){p.roofType=$("#partRoofType").value;p.slope=Math.max(1,+$("#partSlope").value||35)}$("#partEditDlg").style.display="none";partEdit=-1;dr();d3()};
+$("#partEditOK").onclick=()=>{if(partEdit<0)return;let p=parts[partEdit],L=parseFloat(String($("#partL").value).replace(",",".")),B=parseFloat(String($("#partB").value).replace(",",".")),H=parseFloat(String($("#partH").value).replace(",","."));if(L>0)p.w=L*PX;if(B>0)p.h=B*PX;if(H>=0)p.H=H;if(p.type==="roof"){p.roofType=$("#partRoofType").value;p.slope=Math.max(1,+$("#partSlope").value||35)}if(p.type==="dormer")p.dormerType=$("#dormerType").value;$("#partEditDlg").style.display="none";partEdit=-1;dr();d3()};
 $("#partDelete").onclick=()=>{if(partEdit>=0)parts.splice(partEdit,1);$("#partEditDlg").style.display="none";partEdit=-1;dr();d3()};
 
 
@@ -240,18 +263,29 @@ function d3(){
  const PP=(px,py,z=0)=>I({x:(px-minCanvasX)/PX,y:(py-minCanvasY)/PX},z);
  function poly(P,fill,stroke="#555"){g.beginPath();g.moveTo(P[0].x,P[0].y);P.slice(1).forEach(q=>g.lineTo(q.x,q.y));g.closePath();g.fillStyle=fill;g.fill();g.strokeStyle=stroke;g.lineWidth=2;g.stroke()}
  parts.forEach(p=>{
-   let z0=0,z1=Math.max(.05,p.H||.5),x0=p.x,y0=p.y,x1=p.x+p.w,y1=p.y+p.h;
-   let q0=PP(x0,y0,z0),q1=PP(x1,y0,z0),q2=PP(x1,y1,z0),q3=PP(x0,y1,z0);
+   let x0=p.x,y0=p.y,x1=p.x+p.w,y1=p.y+p.h,z00=roofZCanvas(x0,y0),z10=roofZCanvas(x1,y0),z11=roofZCanvas(x1,y1),z01=roofZCanvas(x0,y1),z0=(z00+z10+z11+z01)/4,z1=z0+Math.max(.05,p.H||.5);
+   let q0=PP(x0,y0,z00),q1=PP(x1,y0,z10),q2=PP(x1,y1,z11),q3=PP(x0,y1,z01);
    if(p.type==="chimney"){
      let t0=PP(x0,y0,z1),t1=PP(x1,y0,z1),t2=PP(x1,y1,z1),t3=PP(x0,y1,z1);
      poly([q0,q1,t1,t0],"#8d6e63");poly([q1,q2,t2,t1],"#795548");poly([q2,q3,t3,t2],"#6d4c41");poly([t0,t1,t2,t3],"#a1887f")
    }else if(p.type==="window"){
+     // Window follows the four sampled points of the actual roof plane.
      poly([q0,q1,q2,q3],"#64b5f6","#1565c0")
    }else if(p.type==="dormer"){
-     let e=.25,base=z1*.25,top=z1;
-     let b0=PP(x0,y0,base),b1=PP(x1,y0,base),b2=PP(x1,y1,base),b3=PP(x0,y1,base);
-     let rA=PP((x0+x1)/2,y0,top),rB=PP((x0+x1)/2,y1,top);
-     poly([b0,b1,rA],"#ddd");poly([b3,b2,rB],"#ddd");poly([b0,b3,rB,rA],"#b7c9b7");poly([b1,b2,rB,rA],"#c8d8c8")
+     // Dormer starts on the roof surface instead of at ground level.
+     let dt=p.dormerType||"shed",frontBase=Math.max(z00,z10),rearBase=Math.max(z01,z11),H=Math.max(.15,p.H||1);
+     let b0=PP(x0,y0,z00),b1=PP(x1,y0,z10),b2=PP(x1,y1,z11),b3=PP(x0,y1,z01);
+     if(dt==="flat"){
+       let t0=PP(x0,y0,frontBase+H),t1=PP(x1,y0,frontBase+H),t2=PP(x1,y1,rearBase+H),t3=PP(x0,y1,rearBase+H);
+       poly([b0,b1,t1,t0],"#ddd");poly([b1,b2,t2,t1],"#d5d5d5");poly([b3,b0,t0,t3],"#d5d5d5");poly([t0,t1,t2,t3],"#c8d8c8")
+     }else if(dt==="gable"){
+       let e0=Math.max(frontBase,rearBase),rA=PP((x0+x1)/2,y0,e0+H),rB=PP((x0+x1)/2,y1,e0+H);
+       poly([b0,b1,rA],"#ddd");poly([b3,b2,rB],"#ddd");poly([b0,b3,rB,rA],"#b7c9b7");poly([b1,b2,rB,rA],"#c8d8c8")
+     }else{
+       // Shed dormer: front is higher, roof falls back into the main roof.
+       let tf=frontBase+H,tr=Math.max(rearBase+.08,frontBase+H*.55),t0=PP(x0,y0,tf),t1=PP(x1,y0,tf),t2=PP(x1,y1,tr),t3=PP(x0,y1,tr);
+       poly([b0,b1,t1,t0],"#ddd");poly([b1,b2,t2,t1],"#d5d5d5");poly([b3,b0,t0,t3],"#d5d5d5");poly([t0,t1,t2,t3],"#c8d8c8")
+     }
    }else if(p.type==="roof"){
      let rt=p.roofType||"gable",sl=(p.slope||35)*Math.PI/180,span=(p.h/PX),rr=Math.tan(sl)*span/2,base=Math.max(0,p.H||0);
      let A0=PP(x0,y0,base),A1=PP(x1,y0,base),A2=PP(x1,y1,base),A3=PP(x0,y1,base);

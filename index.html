@@ -1,6 +1,6 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P2</title>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P3</title>
 <style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#eef1f3;overflow:hidden}header{height:48px;background:#17202a;color:#fff;padding:13px}#bar{height:50px;background:#fff;padding:6px;display:flex;gap:6px;overflow:auto}button,input{padding:7px;border:1px solid #999;border-radius:7px;background:#fff}button.on,.go{background:#176b2c;color:#fff}#w{height:calc(100vh - 98px);position:relative}canvas{width:100%;height:100%;touch-action:none;background:#fafafa}#v{background:#f7f8f9}#msg{position:absolute;left:8px;bottom:12px;background:#17202ae8;color:#fff;padding:8px;border-radius:7px;font-size:12px}</style></head><body>
-<header><b>Steildach Skizze</b> &nbsp; <small>P2 · 21.09.2026</small></header><div id="bar"><button id="bh" class="on">1 Haus</button><button id="bd">2 Dachumriss</button><span>Traufhöhe m</span><input id="th" type="number" value="3.00" min="0" step="0.10" style="width:72px"><span>Neigung °</span><input id="n" type="number" value="35" min="1" max="70" style="width:62px"><button id="b3" class="go">3D Ansicht</button><button id="neu">Neu</button></div>
+<header><b>Steildach Skizze</b> &nbsp; <small>P3 · 21.09.2026</small></header><div id="bar"><button id="bh" class="on">1 Haus</button><button id="bd">2 Dachumriss</button><span>Traufhöhe m</span><input id="th" type="number" value="3.00" min="0" step="0.10" style="width:72px"><span>Neigung °</span><input id="n" type="number" value="35" min="1" max="70" style="width:62px"><button id="b3" class="go">3D Ansicht</button><button id="neu">Neu</button></div>
 <div id="w"><canvas id="c"></canvas><div id="view3d" style="display:none;position:absolute;inset:0;background:#f7f8f9;z-index:5"><canvas id="v" style="width:100%;height:100%"></canvas><button id="back2d" style="position:absolute;left:12px;top:12px;z-index:6;background:#17202a;color:white;font-weight:bold">← 2D Zeichnung</button></div><div id="msg">Hausgrundriss zeichnen: Punkte setzen und zum Schließen den ersten Punkt antippen.</div></div>
 <script>
 const c=document.querySelector("#c"),v=document.querySelector("#v"),x=c.getContext("2d"),g=v.getContext("2d"),S=45;let mode="h",h=[],d=[],hc=0,dc=0;
@@ -10,8 +10,42 @@ function dr(){x.clearRect(0,0,c.clientWidth,c.clientHeight);x.strokeStyle="#e2e5
 function near(a,b){return Math.hypot(a.x-b.x,a.y-b.y)<22}c.onpointerdown=e=>{let r=c.getBoundingClientRect(),p={x:e.clientX-r.left,y:e.clientY-r.top},a=mode==="h"?h:d;if(mode==="h"?hc:dc)return;if(a.length>=3&&near(p,a[0])){if(mode==="h"){hc=1;$("#msg").textContent="Haus fertig. Jetzt Dachumriss inklusive Dachüberstand zeichnen."}else{dc=1;$("#msg").textContent="Dachumriss fertig. Neigung einstellen und 3D erzeugen."}dr();return}a.push(p);dr()};
 function md(m){mode=m;$("#bh").classList.toggle("on",m==="h");$("#bd").classList.toggle("on",m==="d")}$("#bh").onclick=()=>md("h");$("#bd").onclick=()=>md("d");
 $("#neu").onclick=()=>{h=[];d=[];hc=dc=0;md("h");dr();d3()};
-function d3(){let W=v.clientWidth,H=v.clientHeight;g.clearRect(0,0,W,H);g.fillStyle="#fff";g.fillRect(0,0,W,H);if(!dc||d.length!==4){g.fillStyle="#555";g.fillText("4-eckigen Dachumriss schließen",10,20);return}let n=+$("#n").value||35,ed=d.map((p,i)=>({i,L:Math.hypot(d[(i+1)%4].x-p.x,d[(i+1)%4].y-p.y)})).sort((a,b)=>b.L-a.L)[0].i,a=d[ed],b=d[(ed+1)%4],q=d[(ed+3)%4],r=d[(ed+2)%4],m1={x:(a.x+q.x)/2,y:(a.y+q.y)/2},m2={x:(b.x+r.x)/2,y:(b.y+r.y)/2},span=(Math.hypot(a.x-q.x,a.y-q.y)+Math.hypot(b.x-r.x,b.y-r.y))/2/S,z=span/2*Math.tan(n*Math.PI/180),th=+$("#th").value||0,sc=Math.min(W/14,H/9),cx=W/2,cy=H*.72;function I(p,Z=0){let X=(p.x-d[0].x)/S,Y=(p.y-d[0].y)/S;return{x:cx+(X-Y)*sc*.72,y:cy+(X+Y)*sc*.28-Z*sc}}let B=d.map(p=>I(p,0)),P=d.map(p=>I(p,th)),R1=I(m1,th+z),R2=I(m2,th+z);g.fillStyle="#e6e9ec";for(let i=0;i<4;i++){let j=(i+1)%4;g.beginPath();g.moveTo(B[i].x,B[i].y);g.lineTo(B[j].x,B[j].y);g.lineTo(P[j].x,P[j].y);g.lineTo(P[i].x,P[i].y);g.closePath();g.fill();g.strokeStyle="#607d8b";g.stroke()}g.strokeStyle="#263238";g.lineWidth=2;for(let i=0;i<4;i++){g.beginPath();g.moveTo(P[i].x,P[i].y);g.lineTo(P[(i+1)%4].x,P[(i+1)%4].y);g.stroke()}[a,b,q,r].forEach((p,i)=>{let Q=I(p),R=i<2?(i?R2:R1):(i===2?R1:R2);g.beginPath();g.moveTo(Q.x,Q.y);g.lineTo(R.x,R.y);g.strokeStyle="#198038";g.stroke()});g.beginPath();g.moveTo(R1.x,R1.y);g.lineTo(R2.x,R2.y);g.strokeStyle="#d32f2f";g.lineWidth=4;g.stroke();g.fillStyle="#111";g.fillText("Traufhöhe "+th.toFixed(2)+" m · Satteldach "+n+"° · First gesamt ca. "+(th+z).toFixed(2)+" m",8,H-10)}
-$("#b3").onclick=()=>{if(!dc||d.length!==4){$("#msg").textContent="P2: zuerst einen viereckigen Dachumriss schließen.";return}$("#view3d").style.display="block";setTimeout(()=>{rs();d3()},0);$("#msg").textContent="3D Ansicht geöffnet."};
+function d3(){
+ let W=v.clientWidth,H=v.clientHeight;g.clearRect(0,0,W,H);g.fillStyle="#f7f8f9";g.fillRect(0,0,W,H);
+ if(!dc||d.length!==4){g.fillStyle="#555";g.font="15px Arial";g.fillText("4-eckigen Dachumriss schließen",16,28);return}
+ let n=+$("#n").value||35,th=+$("#th").value||0;
+ // Determine opposite pair of long edges = eaves. Ridge runs parallel to them.
+ let L=d.map((p,i)=>Math.hypot(d[(i+1)%4].x-p.x,d[(i+1)%4].y-p.y));
+ let pairA=L[0]+L[2],pairB=L[1]+L[3],e0=pairA>=pairB?0:1,e1=(e0+2)%4;
+ let a=d[e0],b=d[(e0+1)%4],c2=d[e1],dd=d[(e1+1)%4];
+ // Match corresponding gable ends by shortest pairing.
+ let direct=Math.hypot(a.x-dd.x,a.y-dd.y)+Math.hypot(b.x-c2.x,b.y-c2.y);
+ let cross=Math.hypot(a.x-c2.x,a.y-c2.y)+Math.hypot(b.x-dd.x,b.y-dd.y);
+ let oa,ob;if(direct<=cross){oa=dd;ob=c2}else{oa=c2;ob=dd}
+ let m1={x:(a.x+oa.x)/2,y:(a.y+oa.y)/2},m2={x:(b.x+ob.x)/2,y:(b.y+ob.y)/2};
+ let span=(Math.hypot(a.x-oa.x,a.y-oa.y)+Math.hypot(b.x-ob.x,b.y-ob.y))/2/S;
+ let rise=span/2*Math.tan(n*Math.PI/180);
+ // Fit model into full 3D view.
+ let minx=Math.min(...d.map(p=>p.x)),maxx=Math.max(...d.map(p=>p.x)),miny=Math.min(...d.map(p=>p.y)),maxy=Math.max(...d.map(p=>p.y));
+ let wm=(maxx-minx)/S,hm=(maxy-miny)/S,totalH=th+rise,sc=Math.min(W/(wm+hm+3),H/(totalH+(wm+hm)*.38+2))*0.9,cx=W/2,cy=H*.78;
+ function I(p,Z=0){let X=(p.x-minx)/S,Y=(p.y-miny)/S;return{x:cx+(X-Y-(wm-hm)/2)*sc*.72,y:cy+(X+Y-(wm+hm)/2)*sc*.28-Z*sc}}
+ let B=d.map(p=>I(p,0)),E=d.map(p=>I(p,th)),R1=I(m1,th+rise),R2=I(m2,th+rise);
+ // walls
+ for(let i=0;i<4;i++){let j=(i+1)%4;g.beginPath();g.moveTo(B[i].x,B[i].y);g.lineTo(B[j].x,B[j].y);g.lineTo(E[j].x,E[j].y);g.lineTo(E[i].x,E[i].y);g.closePath();g.fillStyle="#e2e7ea";g.fill();g.strokeStyle="#607d8b";g.lineWidth=2;g.stroke()}
+ // Find projected indices for a,b,oa,ob
+ const idx=p=>d.indexOf(p),A=E[idx(a)],BB=E[idx(b)],OA=E[idx(oa)],OB=E[idx(ob)];
+ // two real roof planes
+ function face(points,fill){g.beginPath();g.moveTo(points[0].x,points[0].y);points.slice(1).forEach(p=>g.lineTo(p.x,p.y));g.closePath();g.fillStyle=fill;g.fill();g.strokeStyle="#176b2c";g.lineWidth=2.5;g.stroke()}
+ face([A,BB,R2,R1],"#dfe9df"); face([OA,OB,R2,R1],"#edf3ed");
+ // gable triangles
+ function tri(p,q,r){g.beginPath();g.moveTo(p.x,p.y);g.lineTo(q.x,q.y);g.lineTo(r.x,r.y);g.closePath();g.fillStyle="#d9dee2";g.fill();g.strokeStyle="#455a64";g.lineWidth=2;g.stroke()}
+ tri(A,OA,R1);tri(BB,OB,R2);
+ // ridge
+ g.beginPath();g.moveTo(R1.x,R1.y);g.lineTo(R2.x,R2.y);g.strokeStyle="#d32f2f";g.lineWidth=5;g.stroke();
+ g.fillStyle="#17202a";g.font="bold 15px Arial";g.fillText("Satteldach "+n+"°",16,H-48);
+ g.font="14px Arial";g.fillText("Traufhöhe "+th.toFixed(2)+" m · Firsthöhe "+(th+rise).toFixed(2)+" m",16,H-24)
+}
+$("#b3").onclick=()=>{if(!dc||d.length!==4){$("#msg").textContent="P3: zuerst einen viereckigen Dachumriss schließen.";return}$("#view3d").style.display="block";setTimeout(()=>{rs();d3()},0);$("#msg").textContent="3D Ansicht: zwei Dachflächen, First, Traufen und Ortgänge."};
 $("#back2d").onclick=()=>{$("#view3d").style.display="none";setTimeout(rs,0)};
 $("#n").oninput=d3;$("#th").oninput=d3;rs();
 </script></body></html>

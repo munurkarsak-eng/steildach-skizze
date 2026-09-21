@@ -1,6 +1,6 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P10.5</title>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P10.7</title>
 <style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#eef1f3;overflow:hidden}header{height:48px;background:#17202a;color:#fff;padding:13px}#bar{height:50px;background:#fff;padding:6px;display:flex;gap:6px;overflow:auto}button,input{padding:7px;border:1px solid #999;border-radius:7px;background:#fff}button.on,.go{background:#176b2c;color:#fff}#w{height:calc(100vh - 98px);position:relative}canvas{width:100%;height:100%;touch-action:none;background:#fafafa}#v{background:#f7f8f9}#msg{position:absolute;left:8px;bottom:12px;background:#17202ae8;color:#fff;padding:8px;border-radius:7px;font-size:12px}</style></head><body>
-<header><b>Steildach Skizze</b> &nbsp; <small>P10.5 · 21.09.2026</small></header>
+<header><b>Steildach Skizze</b> &nbsp; <small>P10.7 · 21.09.2026</small></header>
 <div id="bar">
 <button id="bd" class="on">Dachumriss</button>
 <span>Dachform</span>
@@ -327,7 +327,7 @@ function d3(){
  });
 
  let names={gable:"Satteldach",hip:"Walmdach",halfhip:"Krüppelwalmdach",pyramid:"Zeltdach"};
- g.fillStyle="#17202a";g.font="bold 15px Arial";g.fillText(names[typ]+" · "+n.toFixed(1)+"°"+((typ==="hip"||typ==="halfhip")?" · First "+Q.ridge.toFixed(2)+" m":""),16,Hh-48);g.font="14px Arial";g.fillText("Ansicht: oben / seitlich · Ziehen = drehen · 2 Finger = zoomen",16,Hh-24)
+ g.fillStyle="#17202a";g.font="12px Arial";g.fillText("Bauteile in 3D: "+parts.length,16,Hh-68);g.fillStyle="#17202a";g.font="bold 15px Arial";g.fillText(names[typ]+" · "+n.toFixed(1)+"°"+((typ==="hip"||typ==="halfhip")?" · First "+Q.ridge.toFixed(2)+" m":""),16,Hh-48);g.font="14px Arial";g.fillText("Ansicht: oben / seitlich · Ziehen = drehen · 2 Finger = zoomen",16,Hh-24)
 }
 $("#b3").onclick=()=>{if(!modelCoords()){$("#msg").textContent="Dachumriss zuerst als Viereck schließen.";return}$("#view3d").style.display="block";setTimeout(()=>{rs();d3()},0)};
 $("#back2d").onclick=()=>{$("#view3d").style.display="none";setTimeout(rs,0)};

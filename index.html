@@ -1,10 +1,31 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P9</title>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P10</title>
 <style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#eef1f3;overflow:hidden}header{height:48px;background:#17202a;color:#fff;padding:13px}#bar{height:50px;background:#fff;padding:6px;display:flex;gap:6px;overflow:auto}button,input{padding:7px;border:1px solid #999;border-radius:7px;background:#fff}button.on,.go{background:#176b2c;color:#fff}#w{height:calc(100vh - 98px);position:relative}canvas{width:100%;height:100%;touch-action:none;background:#fafafa}#v{background:#f7f8f9}#msg{position:absolute;left:8px;bottom:12px;background:#17202ae8;color:#fff;padding:8px;border-radius:7px;font-size:12px}</style></head><body>
-<header><b>Steildach Skizze</b> &nbsp; <small>P9 · 21.09.2026</small></header><div id="bar"><button id="bh" class="on">1 Haus</button><button id="bd">2 Dachumriss</button><span>Traufhöhe m</span><input id="th" type="number" value="3.00" min="0" step="0.10" style="width:72px"><span>Dachform</span><select id="roofType" style="padding:7px;border:1px solid #999;border-radius:7px;background:#fff">
-<option value="gable">Satteldach</option><option value="hip">Walmdach</option><option value="halfhip">Krüppelwalmdach</option><option value="pyramid">Zeltdach</option>
-</select><span id="slopeLbl">Neigung °</span><input id="n" type="number" value="35" min="1" max="70" step="0.1" style="width:62px">
-<span id="ridgeLbl" style="display:none">First m</span><input id="ridgeLen" type="number" value="3.00" min="0.10" step="0.10" style="width:72px;display:none">
-<span id="riseLbl" style="display:none">Dachhöhe m</span><input id="roofRise" type="number" value="2.00" min="0.01" step="0.05" style="width:72px;display:none"><button id="fitBtn">⊡ Einpassen</button><button id="squareBtn">□ 90°</button><button id="centerBtn">◎ Symmetrisch</button><button id="partBtn">+ Bauteil</button><button id="b3" class="go">3D Ansicht</button><button id="neu">Neu</button></div>
+<header><b>Steildach Skizze</b> &nbsp; <small>P10 · 21.09.2026</small></header>
+<div id="bar">
+<button id="bd" class="on">Dachumriss</button>
+<span>Dachform</span>
+<select id="roofType" style="padding:7px;border:1px solid #999;border-radius:7px;background:#fff">
+<option value="gable">Satteldach</option>
+<option value="hip">Walmdach</option>
+<option value="halfhip">Krüppelwalmdach</option>
+<option value="pyramid">Zeltdach</option>
+</select>
+<button id="fitBtn">⊡ Einpassen</button>
+<button id="squareBtn">□ 90°</button>
+<button id="partBtn">+ Bauteil</button>
+<button id="b3" class="go">3D Ansicht</button>
+<button id="neu">Neu</button>
+</div>
+<div id="roofData" style="display:none;position:absolute;top:104px;left:8px;z-index:4;background:#fff;border:1px solid #bbb;border-radius:10px;padding:8px;font-size:13px;box-shadow:0 2px 8px #0002">
+<b>Walm-Dreieck</b> · rote Linien antippen<br>
+<span id="roofDataText">Lauf – · Höhe – · Neigung –</span>
+</div>
+<div id="triDlg" style="display:none;position:fixed;inset:0;background:#0008;z-index:26;align-items:center;justify-content:center">
+<div style="background:white;padding:18px;border-radius:12px;width:min(88vw,360px)">
+<b id="triTitle">Walm-Dreieck</b>
+<div style="margin:12px 0"><input id="triVal" type="number" step="0.01" inputmode="decimal" style="width:100%;font-size:20px" placeholder="Meter"></div>
+<div style="display:flex;gap:8px;justify-content:flex-end"><button id="triCancel">Abbrechen</button><button id="triOK" class="go">Übernehmen</button></div>
+</div></div>
 <div id="partEditDlg" style="display:none;position:fixed;inset:0;background:#0008;z-index:24;align-items:center;justify-content:center">
 <div style="background:white;padding:18px;border-radius:12px;width:min(90vw,380px)">
 <b id="partEditTitle">Bauteil</b>
@@ -29,11 +50,11 @@
 <b id="edgeTitle">Kantenlänge</b>
 <div style="margin:12px 0"><input id="edgeVal" type="number" step="0.01" inputmode="decimal" style="width:100%;font-size:20px" placeholder="Meter"></div>
 <div style="display:flex;gap:8px;justify-content:flex-end"><button id="edgeCancel">Abbrechen</button><button id="edgeOK" class="go">Übernehmen</button></div>
-</div></div><div id="w"><canvas id="c"></canvas><div id="view3d" style="display:none;position:absolute;inset:0;background:#f7f8f9;z-index:5"><canvas id="v" style="width:100%;height:100%"></canvas><button id="back2d" style="position:absolute;left:12px;top:12px;z-index:6;background:#17202a;color:white;font-weight:bold">← 2D Zeichnung</button></div><div id="msg">Hausgrundriss zeichnen: Punkte setzen und zum Schließen den ersten Punkt antippen.</div></div>
+</div></div><div id="w"><canvas id="c"></canvas><div id="view3d" style="display:none;position:absolute;inset:0;background:#f7f8f9;z-index:5"><canvas id="v" style="width:100%;height:100%"></canvas><button id="back2d" style="position:absolute;left:12px;top:12px;z-index:6;background:#17202a;color:white;font-weight:bold">← 2D Zeichnung</button></div><div id="msg">Dachumriss zeichnen: Punkte setzen und zum Schließen den ersten Punkt antippen.</div></div>
 <script>
 const c=$("#c"),v=$("#v"),x=c.getContext("2d"),g=v.getContext("2d"),PX=45;
 function $(q){return document.querySelector(q)}
-let mode="h",h=[],d=[],hc=false,dc=false,hm=[],dm=[],drag=null,press=null,lastAction=[],cornerDrag=null;
+let mode="d",h=[],d=[],hc=true,dc=false,hm=[],dm=[],drag=null,press=null,lastAction=[],cornerDrag=null;
 let viewScale=1,viewX=0,viewY=0,viewTouches=new Map(),viewPinch=null,panView=null;
 function rs(){c.width=c.clientWidth*devicePixelRatio;c.height=c.clientHeight*devicePixelRatio;x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);v.width=v.clientWidth*devicePixelRatio;v.height=v.clientHeight*devicePixelRatio;g.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);dr();d3()}
 addEventListener("resize",rs);
@@ -44,10 +65,10 @@ function pl(a,col,closed,ms){
  a.forEach((p,i)=>{x.beginPath();x.arc(p.x,p.y,5,0,7);x.fillStyle=col;x.fill();x.fillStyle="#111";x.font="12px Arial";x.fillText("P"+(i+1),p.x+7,p.y-7)});
  let n=closed?a.length:a.length-1;for(let i=0;i<n;i++){let q=a[i],r=a[(i+1)%a.length],val=measure(a,ms,i);x.fillStyle="#111";x.font="bold 12px Arial";x.fillText(val.toFixed(2)+" m",(q.x+r.x)/2+5,(q.y+r.y)/2-5)}
 }
-function dr(){x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);x.clearRect(0,0,c.clientWidth,c.clientHeight);let GRID=15;x.strokeStyle="#e2e5e8";x.lineWidth=1;for(let a=0;a<c.clientWidth;a+=GRID){x.beginPath();x.moveTo(a,0);x.lineTo(a,c.clientHeight);x.stroke()}for(let a=0;a<c.clientHeight;a+=GRID){x.beginPath();x.moveTo(0,a);x.lineTo(c.clientWidth,a);x.stroke()}x.save();x.translate(viewX,viewY);x.scale(viewScale,viewScale);pl(h,"#0d47a1",hc,hm);pl(d,"#198038",dc,dm);drawParts();x.restore()}
+function dr(){x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);x.clearRect(0,0,c.clientWidth,c.clientHeight);let GRID=15;x.strokeStyle="#e2e5e8";x.lineWidth=1;for(let a=0;a<c.clientWidth;a+=GRID){x.beginPath();x.moveTo(a,0);x.lineTo(a,c.clientHeight);x.stroke()}for(let a=0;a<c.clientHeight;a+=GRID){x.beginPath();x.moveTo(0,a);x.lineTo(c.clientWidth,a);x.stroke()}x.save();x.translate(viewX,viewY);x.scale(viewScale,viewScale);pl(d,"#198038",dc,dm);drawRoofGuide();drawParts();x.restore()}
 function edgeHit(p,a,closed){let n=closed?a.length:a.length-1,best=-1,bd=24;for(let i=0;i<n;i++){let A=a[i],B=a[(i+1)%a.length],vx=B.x-A.x,vy=B.y-A.y,L=vx*vx+vy*vy,t=L?Math.max(0,Math.min(1,((p.x-A.x)*vx+(p.y-A.y)*vy)/L)):0,q={x:A.x+t*vx,y:A.y+t*vy},dd=dist(p,q);if(dd<bd){bd=dd;best=i}}return best}
 let edgeEdit=null;
-function setEdge(a,ms,i){edgeEdit={a,ms,i};$("#edgeTitle").textContent=(a===h?"Haus":"Dach")+" – Kante K"+(i+1)+" in Meter";$("#edgeVal").value=measure(a,ms,i).toFixed(2);$("#edgeDlg").style.display="flex";setTimeout(()=>{$("#edgeVal").focus();$("#edgeVal").select()},50)}
+function setEdge(a,ms,i){edgeEdit={a,ms,i};$("#edgeTitle").textContent="Dach – Kante K"+(i+1)+" in Meter";$("#edgeVal").value=measure(a,ms,i).toFixed(2);$("#edgeDlg").style.display="flex";setTimeout(()=>{$("#edgeVal").focus();$("#edgeVal").select()},50)}
 $("#edgeCancel").onclick=()=>{$("#edgeDlg").style.display="none";edgeEdit=null};
 $("#edgeOK").onclick=()=>{if(!edgeEdit)return;let {a,ms,i}=edgeEdit,val=parseFloat(String($("#edgeVal").value).replace(",","."));if(!(val>0))return;lastAction.push({kind:"measure",ms,i,old:ms[i]});ms[i]=val;let A=a[i],j=(i+1)%a.length,B=a[j],L=dist(A,B)||1,newL=val*PX,oldB={...B};lastAction.push({kind:"point",a,j,old:oldB});B.x=A.x+(B.x-A.x)/L*newL;B.y=A.y+(B.y-A.y)/L*newL;if(a.length===4){ms[(i+2)%4]=val;let rr=rectFromBounds(a),w=(i%2===0?val:(ms[(i+1)%4]||measure(a,ms,(i+1)%4))),hh=(i%2===1?val:(ms[(i+1)%4]||measure(a,ms,(i+1)%4)));/* visual geometry is squared by button when desired */}$("#edgeDlg").style.display="none";edgeEdit=null;fit2D()};
 function inside(p,a){let z=false;for(let i=0,j=a.length-1;i<a.length;j=i++){let A=a[i],B=a[j];if(((A.y>p.y)!=(B.y>p.y))&&(p.x<(B.x-A.x)*(p.y-A.y)/(B.y-A.y)+A.x))z=!z}return z}
@@ -74,21 +95,14 @@ function make90(a,ms){
  a.forEach((p,i)=>Object.assign(p,pts[i]));
  ms[0]=ms[2]=w/PX;ms[1]=ms[3]=hh/PX;dr()
 }
-$("#squareBtn").onclick=()=>{let a=mode==="h"?h:d,ms=mode==="h"?hm:dm,cl=mode==="h"?hc:dc;if(!cl||a.length!==4){$("#msg").textContent="Erst den gewählten Umriss als Viereck schließen.";return}make90(a,ms);$("#msg").textContent=(mode==="h"?"Haus":"Dach")+" exakt auf 90° gestellt."};
-$("#centerBtn").onclick=()=>{
- if(!hc||!dc||h.length!==4||d.length!==4){$("#msg").textContent="Haus und Dach zuerst als Viereck schließen.";return}
- make90(h,hm);make90(d,dm);
- let hx=h.reduce((z,p)=>z+p.x,0)/4,hy=h.reduce((z,p)=>z+p.y,0)/4,dx=d.reduce((z,p)=>z+p.x,0)/4,dy=d.reduce((z,p)=>z+p.y,0)/4;
- let old=d.map(p=>({...p}));lastAction.push({kind:"move",a:d,old});d.forEach(p=>{p.x+=hx-dx;p.y+=hy-dy});
- fit2D();$("#msg").textContent="Symmetrisch: Haus und Dach exakt mittig. Gegenüberliegende Überstände sind gleich."
-};
+$("#squareBtn").onclick=()=>{if(!dc||d.length!==4){$("#msg").textContent="Erst den Dachumriss als Viereck schließen.";return}make90(d,dm);fit2D();$("#msg").textContent="Dachumriss exakt auf 90° gestellt."};
 
-function md(m){mode=m;$("#bh").classList.toggle("on",m==="h");$("#bd").classList.toggle("on",m==="d")}
-$("#bh").onclick=()=>md("h");$("#bd").onclick=()=>md("d");
-c.onpointerdown=e=>{c.setPointerCapture(e.pointerId);let r=c.getBoundingClientRect(),p={x:(e.clientX-r.left-viewX)/viewScale,y:(e.clientY-r.top-viewY)/viewScale},a=mode==="h"?h:d,closed=mode==="h"?hc:dc,ms=mode==="h"?hm:dm;
- let pi=partAt(p);if(pi>=0){let q=parts[pi];partPress={i:pi,start:p,t:Date.now(),moved:false};partDrag={i:pi,ox:p.x-q.x,oy:p.y-q.y,old:{...q}};return}
+function md(m){mode="d"}$("#bd").onclick=()=>{mode="d";$("#bd").classList.add("on")};
+c.onpointerdown=e=>{c.setPointerCapture(e.pointerId);let r=c.getBoundingClientRect(),p={x:(e.clientX-r.left-viewX)/viewScale,y:(e.clientY-r.top-viewY)/viewScale},a=d,closed=dc,ms=dm;
+ let tk=triHit(p);if(tk){openTri(tk);return}
+  let pi=partAt(p);if(pi>=0){let q=parts[pi];partPress={i:pi,start:p,t:Date.now(),moved:false};partDrag={i:pi,ox:p.x-q.x,oy:p.y-q.y,old:{...q}};return}
  if(closed){let ci=cornerHit(p,a);if(ci>=0){cornerDrag={a,i:ci,old:a.map(q=>({...q}))};$("#msg").textContent="Eckpunkt ziehen.";return}let ei=edgeHit(p,a,true);if(ei>=0){press={p,t:Date.now(),a,ms,ei,moved:false};return}if(inside(p,a)){press={p,t:Date.now(),a,ms,ei:-1,moved:false};return}return}
- if(a.length>=3&&near(p,a[0])){if(mode==="h")hc=true;else dc=true;lastAction.push({kind:"close",m:mode});$("#msg").textContent=mode==="h"?"Haus fertig. Kante antippen = Metermaß. Länger in Fläche drücken = verschieben.":"Dach fertig. Kante antippen = Metermaß. Länger in Fläche drücken = verschieben.";dr();return}
+ if(a.length>=3&&near(p,a[0])){dc=true;lastAction.push({kind:"close",m:mode});$("#msg").textContent="Dach fertig. Kante antippen = Metermaß. Eckpunkte ziehen; länger in Fläche drücken = verschieben.";dr();return}
  a.push(p);ms.push(0);lastAction.push({kind:"add",a,ms});dr()
 };
 c.onpointermove=e=>{let rr=c.getBoundingClientRect(),pp={x:(e.clientX-rr.left-viewX)/viewScale,y:(e.clientY-rr.top-viewY)/viewScale};if(partDrag){let q=parts[partDrag.i];q.x=pp.x-partDrag.ox;q.y=pp.y-partDrag.oy;if(partPress&&dist(pp,partPress.start)>5/viewScale)partPress.moved=true;dr();return}if(cornerDrag){cornerDrag.a[cornerDrag.i].x=pp.x;cornerDrag.a[cornerDrag.i].y=pp.y;dr();return}if(!press)return;let r=c.getBoundingClientRect(),p={x:(e.clientX-r.left-viewX)/viewScale,y:(e.clientY-r.top-viewY)/viewScale};if(dist(p,press.p)>8/viewScale)press.moved=true;
@@ -96,8 +110,8 @@ c.onpointermove=e=>{let rr=c.getBoundingClientRect(),pp={x:(e.clientX-rr.left-vi
  if(drag){let dx=p.x-drag.start.x,dy=p.y-drag.start.y;drag.a.forEach((q,i)=>{q.x=drag.base[i].x+dx;q.y=drag.base[i].y+dy});dr()}
 };
 c.onpointerup=e=>{if(partDrag){let pd=partDrag,pp=partPress;partDrag=null;partPress=null;if(pp&&!pp.moved&&Date.now()-pp.t<650)editPart(pd.i);else lastAction.push({kind:"partmove",i:pd.i,old:pd.old});dr();return}if(cornerDrag){lastAction.push({kind:"shape",a:cornerDrag.a,old:cornerDrag.old});cornerDrag=null;dr();return}if(!press)return;if(drag){lastAction.push({kind:"move",a:drag.a,old:drag.base});drag=null;press=null;dr();return}if(!press.moved&&Date.now()-press.t<650&&press.ei>=0)setEdge(press.a,press.ms,press.ei);press=null};
-$("#neu").onclick=()=>{h=[];d=[];hm=[];dm=[];parts=[];hc=dc=false;lastAction=[];viewScale=1;viewX=viewY=0;md("h");dr();d3()};
-let undo=document.createElement("button");undo.textContent="↶ Schritt zurück";$("#neu").before(undo);undo.onclick=()=>{let z=lastAction.pop();if(!z)return;if(z.kind==="add"){z.a.pop();z.ms.pop()}else if(z.kind==="close"){if(z.m==="h")hc=false;else dc=false}else if(z.kind==="measure")z.ms[z.i]=z.old;else if(z.kind==="point")z.a[z.j]=z.old;else if(z.kind==="move"||z.kind==="shape")z.a.forEach((q,i)=>Object.assign(q,z.old[i]));else if(z.kind==="partmove"&&parts[z.i])Object.assign(parts[z.i],z.old);dr()};
+$("#neu").onclick=()=>{h=[];d=[];hm=[];dm=[];parts=[];hc=true;dc=false;lastAction=[];viewScale=1;viewX=viewY=0;walmRun=null;walmRise=null;mode="d";$("#bd").classList.add("on");updateRoofData();dr();d3()};
+let undo=document.createElement("button");undo.textContent="↶ Schritt zurück";$("#neu").before(undo);undo.onclick=()=>{let z=lastAction.pop();if(!z)return;if(z.kind==="add"){z.a.pop();z.ms.pop()}else if(z.kind==="close"){dc=false}else if(z.kind==="measure")z.ms[z.i]=z.old;else if(z.kind==="point")z.a[z.j]=z.old;else if(z.kind==="move"||z.kind==="shape")z.a.forEach((q,i)=>Object.assign(q,z.old[i]));else if(z.kind==="partmove"&&parts[z.i])Object.assign(parts[z.i],z.old);dr()};
 
 let parts=[],partDrag=null,partPress=null,partEdit=-1;
 function addPart(type){
@@ -123,7 +137,7 @@ $("#partDelete").onclick=()=>{if(partEdit>=0)parts.splice(partEdit,1);$("#partEd
 
 
 function fit2D(){
- let all=[...h,...d];if(!all.length){viewScale=1;viewX=viewY=0;dr();return}
+ let all=[...d];if(!all.length){viewScale=1;viewX=viewY=0;dr();return}
  let minx=Math.min(...all.map(p=>p.x)),maxx=Math.max(...all.map(p=>p.x)),miny=Math.min(...all.map(p=>p.y)),maxy=Math.max(...all.map(p=>p.y));
  let pad=45,w=Math.max(1,maxx-minx),hh=Math.max(1,maxy-miny);
  viewScale=Math.min((c.clientWidth-pad*2)/w,(c.clientHeight-pad*2)/hh,2);
@@ -134,33 +148,62 @@ function fit2D(){
 $("#fitBtn").onclick=fit2D;
 
 function modelCoords(){
- if(!hc||!dc||h.length!==4||d.length!==4)return null;
- // Use common 2D origin and one common metric scale. This preserves the visible roof overhang.
- let all=[...h,...d],minx=Math.min(...all.map(p=>p.x)),miny=Math.min(...all.map(p=>p.y));
- return {H:h.map(p=>({x:(p.x-minx)/PX,y:(p.y-miny)/PX})),D:d.map(p=>({x:(p.x-minx)/PX,y:(p.y-miny)/PX}))}
+ if(!dc||d.length!==4)return null;
+ let minx=Math.min(...d.map(p=>p.x)),miny=Math.min(...d.map(p=>p.y));
+ return {D:d.map(p=>({x:(p.x-minx)/PX,y:(p.y-miny)/PX}))}
 }
 let rotX=-0.55,rotZ=-0.65,zoom3=1,drag3=null;
 
-function roofInputs(){
- let typ=$("#roofType").value,hip=(typ==="hip"||typ==="halfhip");
- $("#slopeLbl").style.display=hip?"none":"inline";$("#n").style.display=hip?"none":"inline-block";
- $("#ridgeLbl").style.display=hip?"inline":"none";$("#ridgeLen").style.display=hip?"inline-block":"none";
- $("#riseLbl").style.display=hip?"inline":"none";$("#roofRise").style.display=hip?"inline-block":"none"
+
+let walmRun=null,walmRise=null,triEdit=null;
+function isWalm(){let t=$("#roofType").value;return t==="hip"||t==="halfhip"}
+function updateRoofData(){
+ let box=$("#roofData"),txt=$("#roofDataText");
+ if(!isWalm()){box.style.display="none";return}
+ box.style.display="block";
+ let ang=(walmRun>0&&walmRise>0)?Math.atan2(walmRise,walmRun)*180/Math.PI:null;
+ txt.textContent="Lauf "+(walmRun? walmRun.toFixed(2)+" m":"–")+" · Höhe "+(walmRise? walmRise.toFixed(2)+" m":"–")+" · Neigung "+(ang?ang.toFixed(1)+"°":"–")
+}
+function openTri(kind){
+ triEdit=kind;$("#triTitle").textContent=kind==="run"?"Walm-Dreieck – Lauf in Meter":"Walm-Dreieck – Höhe in Meter";
+ $("#triVal").value=(kind==="run"?walmRun:walmRise)||"";$("#triDlg").style.display="flex";
+ setTimeout(()=>{$("#triVal").focus();$("#triVal").select()},50)
+}
+$("#triCancel").onclick=()=>{$("#triDlg").style.display="none";triEdit=null};
+$("#triOK").onclick=()=>{let v=parseFloat(String($("#triVal").value).replace(",","."));if(!(v>0))return;if(triEdit==="run")walmRun=v;else walmRise=v;$("#triDlg").style.display="none";triEdit=null;updateRoofData();dr();d3()};
+function guideGeom(){
+ if(!dc||d.length!==4||!isWalm())return null;
+ let minx=Math.min(...d.map(p=>p.x)),maxx=Math.max(...d.map(p=>p.x)),miny=Math.min(...d.map(p=>p.y)),maxy=Math.max(...d.map(p=>p.y));
+ let cx=(minx+maxx)/2,cy=(miny+maxy)/2;
+ // Simple plan guide: Walm triangle at the short end of the roof.
+ let horizontal=(maxx-minx)>=(maxy-miny);
+ if(horizontal)return {T:{x:minx,y:cy},F:{x:cx,y:cy},H:{x:cx,y:cy-70/viewScale}};
+ return {T:{x:cx,y:miny},F:{x:cx,y:cy},H:{x:cx+70/viewScale,y:cy}}
+}
+function pointSegDist(p,A,B){let vx=B.x-A.x,vy=B.y-A.y,L=vx*vx+vy*vy,t=L?Math.max(0,Math.min(1,((p.x-A.x)*vx+(p.y-A.y)*vy)/L)):0;return dist(p,{x:A.x+t*vx,y:A.y+t*vy})}
+function triHit(p){
+ let G=guideGeom();if(!G)return null;
+ if(pointSegDist(p,G.T,G.F)<18/viewScale)return"run";
+ if(pointSegDist(p,G.F,G.H)<18/viewScale)return"rise";
+ return null
+}
+function drawRoofGuide(){
+ let G=guideGeom();if(!G)return;
+ x.save();x.strokeStyle="#d32f2f";x.lineWidth=3/viewScale;x.setLineDash([6/viewScale,4/viewScale]);
+ x.beginPath();x.moveTo(G.T.x,G.T.y);x.lineTo(G.F.x,G.F.y);x.lineTo(G.H.x,G.H.y);x.stroke();x.setLineDash([]);
+ x.fillStyle="#d32f2f";x.font=(12/viewScale)+"px Arial";
+ x.fillText("Lauf"+(walmRun?" "+walmRun.toFixed(2)+" m":""),(G.T.x+G.F.x)/2,G.T.y-7/viewScale);
+ x.fillText("Höhe"+(walmRise?" "+walmRise.toFixed(2)+" m":""),G.H.x+5/viewScale,(G.F.y+G.H.y)/2);
+ x.restore()
 }
 function roofCalc(D,typ){
  let L=D.map((p,i)=>dist(p,D[(i+1)%4])),e=(L[0]+L[2]>=L[1]+L[3])?0:1,op=(e+2)%4,a=D[e],b=D[(e+1)%4],c2=D[op],dd=D[(op+1)%4];
  let direct=dist(a,dd)+dist(b,c2),oa=direct<=dist(a,c2)+dist(b,dd)?dd:c2,ob=direct<=dist(a,c2)+dist(b,dd)?c2:dd;
  let m1={x:(a.x+oa.x)/2,y:(a.y+oa.y)/2},m2={x:(b.x+ob.x)/2,y:(b.y+ob.y)/2},axis=dist(m1,m2),span=(dist(a,oa)+dist(b,ob))/2;
- let rise,angle,ridge=axis;
- if(typ==="hip"||typ==="halfhip"){
-   ridge=Math.max(.01,+$("#ridgeLen").value||0);
-   rise=Math.max(.01,+$("#roofRise").value||0);
-   ridge=Math.min(ridge,axis*.98);
-   // horizontal run of the main roof slope = half building span
-   angle=Math.atan2(rise,span/2)*180/Math.PI;
- }else{
-   angle=+$("#n").value||35;rise=span/2*Math.tan(angle*Math.PI/180);
- }
+ let run=(walmRun>0?walmRun:span/2),rise=(walmRise>0?walmRise:run*Math.tan(35*Math.PI/180));
+ let angle=Math.atan2(rise,run)*180/Math.PI;
+ let ridge=typ==="pyramid"?0:Math.max(.01,axis-2*run);
+ if(typ==="gable"){angle=35;rise=span/2*Math.tan(angle*Math.PI/180);ridge=axis}
  let ux=(m2.x-m1.x)/(axis||1),uy=(m2.y-m1.y)/(axis||1),cx=(m1.x+m2.x)/2,cy=(m1.y+m2.y)/2;
  let r1={x:cx-ux*ridge/2,y:cy-uy*ridge/2},r2={x:cx+ux*ridge/2,y:cy+uy*ridge/2};
  return {a,b,oa,ob,m1,m2,r1,r2,span,axis,rise,angle,ridge}
@@ -191,9 +234,9 @@ function d3(){
  }
 
  // Real 3D components at the same metric position as in the 2D plan.
- function projPartPoint(px,py,z){return I({x:(px/PX)+(Math.min(...[...h,...d].map(q=>q.x))/PX),y:(py/PX)+(Math.min(...[...h,...d].map(q=>q.y))/PX)},z)}
+ function projPartPoint(px,py,z){return I({x:(px/PX)+(Math.min(...d.map(q=>q.x))/PX),y:(py/PX)+(Math.min(...d.map(q=>q.y))/PX)},z)}
  // Convert component canvas coordinates through the same common origin used by modelCoords.
- let minCanvasX=Math.min(...[...h,...d].map(q=>q.x)),minCanvasY=Math.min(...[...h,...d].map(q=>q.y));
+ let minCanvasX=Math.min(...d.map(q=>q.x)),minCanvasY=Math.min(...d.map(q=>q.y));
  const PP=(px,py,z=0)=>I({x:(px-minCanvasX)/PX,y:(py-minCanvasY)/PX},z);
  function poly(P,fill,stroke="#555"){g.beginPath();g.moveTo(P[0].x,P[0].y);P.slice(1).forEach(q=>g.lineTo(q.x,q.y));g.closePath();g.fillStyle=fill;g.fill();g.strokeStyle=stroke;g.lineWidth=2;g.stroke()}
  parts.forEach(p=>{
@@ -226,7 +269,7 @@ function d3(){
  let names={gable:"Satteldach",hip:"Walmdach",halfhip:"Krüppelwalmdach",pyramid:"Zeltdach"};
  g.fillStyle="#17202a";g.font="bold 15px Arial";g.fillText(names[typ]+" · "+n.toFixed(1)+"°"+((typ==="hip"||typ==="halfhip")?" · First "+Q.ridge.toFixed(2)+" m":""),16,Hh-48);g.font="14px Arial";g.fillText("Ansicht: oben / seitlich · Ziehen = drehen · 2 Finger = zoomen",16,Hh-24)
 }
-$("#b3").onclick=()=>{if(!modelCoords()){$("#msg").textContent="P5: Haus und Dachumriss zuerst als Viereck schließen.";return}$("#view3d").style.display="block";setTimeout(()=>{rs();d3()},0)};
+$("#b3").onclick=()=>{if(!modelCoords()){$("#msg").textContent="Dachumriss zuerst als Viereck schließen.";return}$("#view3d").style.display="block";setTimeout(()=>{rs();d3()},0)};
 $("#back2d").onclick=()=>{$("#view3d").style.display="none";setTimeout(rs,0)};
 
 c.addEventListener("pointerdown",e=>{viewTouches.set(e.pointerId,{x:e.clientX,y:e.clientY});if(viewTouches.size===2){let a=[...viewTouches.values()],dd=dist(a[0],a[1]);viewPinch={d:dd,s:viewScale,x:viewX,y:viewY,mx:(a[0].x+a[1].x)/2,my:(a[0].y+a[1].y)/2}}},true);
@@ -237,7 +280,6 @@ let p3=new Map(),pinch3=null;
 v.onpointerdown=e=>{v.setPointerCapture(e.pointerId);p3.set(e.pointerId,{x:e.clientX,y:e.clientY});if(p3.size===1)drag3={x:e.clientX,y:e.clientY,rz:rotZ,rx:rotX};if(p3.size===2){let a=[...p3.values()];pinch3={d:dist(a[0],a[1]),z:zoom3}}};
 v.onpointermove=e=>{if(!p3.has(e.pointerId))return;p3.set(e.pointerId,{x:e.clientX,y:e.clientY});if(p3.size===1&&drag3){rotZ=drag3.rz+(e.clientX-drag3.x)*.008;rotX=Math.max(-1.30,Math.min(-0.18,drag3.rx+(e.clientY-drag3.y)*.006));d3()}else if(p3.size===2&&pinch3){let a=[...p3.values()],dd=dist(a[0],a[1]);zoom3=Math.max(.45,Math.min(3,pinch3.z*dd/pinch3.d));d3()}};
 function end3(e){p3.delete(e.pointerId);drag3=null;if(p3.size<2)pinch3=null}v.onpointerup=end3;v.onpointercancel=end3;
-$("#n").oninput=d3;$("#th").oninput=d3;
-function roofChanged(){roofInputs();let typ=$("#roofType").value;if((typ==="hip"||typ==="halfhip")&&modelCoords()){let q=roofCalc(modelCoords().D,typ);$("#n").value=q.angle.toFixed(1)}d3()}
-$("#roofType").onchange=roofChanged;$("#ridgeLen").oninput=roofChanged;$("#roofRise").oninput=roofChanged;roofInputs();rs();
+function roofChanged(){walmRun=null;walmRise=null;updateRoofData();dr();d3()}
+$("#roofType").onchange=roofChanged;updateRoofData();rs();
 </script></body></html>

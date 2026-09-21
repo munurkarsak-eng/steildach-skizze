@@ -1,6 +1,6 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P4</title>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P5</title>
 <style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#eef1f3;overflow:hidden}header{height:48px;background:#17202a;color:#fff;padding:13px}#bar{height:50px;background:#fff;padding:6px;display:flex;gap:6px;overflow:auto}button,input{padding:7px;border:1px solid #999;border-radius:7px;background:#fff}button.on,.go{background:#176b2c;color:#fff}#w{height:calc(100vh - 98px);position:relative}canvas{width:100%;height:100%;touch-action:none;background:#fafafa}#v{background:#f7f8f9}#msg{position:absolute;left:8px;bottom:12px;background:#17202ae8;color:#fff;padding:8px;border-radius:7px;font-size:12px}</style></head><body>
-<header><b>Steildach Skizze</b> &nbsp; <small>P4 · 21.09.2026</small></header><div id="bar"><button id="bh" class="on">1 Haus</button><button id="bd">2 Dachumriss</button><span>Traufhöhe m</span><input id="th" type="number" value="3.00" min="0" step="0.10" style="width:72px"><span>Neigung °</span><input id="n" type="number" value="35" min="1" max="70" style="width:62px"><button id="b3" class="go">3D Ansicht</button><button id="neu">Neu</button></div>
+<header><b>Steildach Skizze</b> &nbsp; <small>P5 · 21.09.2026</small></header><div id="bar"><button id="bh" class="on">1 Haus</button><button id="bd">2 Dachumriss</button><span>Traufhöhe m</span><input id="th" type="number" value="3.00" min="0" step="0.10" style="width:72px"><span>Neigung °</span><input id="n" type="number" value="35" min="1" max="70" style="width:62px"><button id="b3" class="go">3D Ansicht</button><button id="neu">Neu</button></div>
 <div id="w"><canvas id="c"></canvas><div id="view3d" style="display:none;position:absolute;inset:0;background:#f7f8f9;z-index:5"><canvas id="v" style="width:100%;height:100%"></canvas><button id="back2d" style="position:absolute;left:12px;top:12px;z-index:6;background:#17202a;color:white;font-weight:bold">← 2D Zeichnung</button></div><div id="msg">Hausgrundriss zeichnen: Punkte setzen und zum Schließen den ersten Punkt antippen.</div></div>
 <script>
 const c=$("#c"),v=$("#v"),x=c.getContext("2d"),g=v.getContext("2d"),PX=45;
@@ -17,9 +17,10 @@ function pl(a,col,closed,ms){
 }
 function dr(){x.clearRect(0,0,c.clientWidth,c.clientHeight);x.strokeStyle="#e2e5e8";x.lineWidth=1;for(let a=0;a<c.clientWidth;a+=PX){x.beginPath();x.moveTo(a,0);x.lineTo(a,c.clientHeight);x.stroke()}for(let a=0;a<c.clientHeight;a+=PX){x.beginPath();x.moveTo(0,a);x.lineTo(c.clientWidth,a);x.stroke()}pl(h,"#0d47a1",hc,hm);pl(d,"#198038",dc,dm)}
 function edgeHit(p,a,closed){let n=closed?a.length:a.length-1,best=-1,bd=16;for(let i=0;i<n;i++){let A=a[i],B=a[(i+1)%a.length],vx=B.x-A.x,vy=B.y-A.y,L=vx*vx+vy*vy,t=L?Math.max(0,Math.min(1,((p.x-A.x)*vx+(p.y-A.y)*vy)/L)):0,q={x:A.x+t*vx,y:A.y+t*vy},dd=dist(p,q);if(dd<bd){bd=dd;best=i}}return best}
-function setEdge(a,ms,i){let old=measure(a,ms,i),z=prompt("Kantenlänge in Meter:",old.toFixed(2));if(z===null)return;let val=parseFloat(String(z).replace(",","."));if(!(val>0))return;lastAction.push({kind:"measure",ms,i,old:ms[i]});ms[i]=val;
- // scale the selected edge by moving its end point, keeping its direction
- let A=a[i],j=(i+1)%a.length,B=a[j],L=dist(A,B)||1,newL=val*PX,oldB={...B};lastAction.push({kind:"point",a,j,old:oldB});B.x=A.x+(B.x-A.x)/L*newL;B.y=A.y+(B.y-A.y)/L*newL;dr()}
+let edgeEdit=null;
+function setEdge(a,ms,i){edgeEdit={a,ms,i};$("#edgeTitle").textContent=(a===h?"Haus":"Dach")+" – Kante K"+(i+1)+" in Meter";$("#edgeVal").value=measure(a,ms,i).toFixed(2);$("#edgeDlg").style.display="flex";setTimeout(()=>{$("#edgeVal").focus();$("#edgeVal").select()},50)}
+$("#edgeCancel").onclick=()=>{$("#edgeDlg").style.display="none";edgeEdit=null};
+$("#edgeOK").onclick=()=>{if(!edgeEdit)return;let {a,ms,i}=edgeEdit,val=parseFloat(String($("#edgeVal").value).replace(",","."));if(!(val>0))return;lastAction.push({kind:"measure",ms,i,old:ms[i]});ms[i]=val;let A=a[i],j=(i+1)%a.length,B=a[j],L=dist(A,B)||1,newL=val*PX,oldB={...B};lastAction.push({kind:"point",a,j,old:oldB});B.x=A.x+(B.x-A.x)/L*newL;B.y=A.y+(B.y-A.y)/L*newL;$("#edgeDlg").style.display="none";edgeEdit=null;dr()};
 function inside(p,a){let z=false;for(let i=0,j=a.length-1;i<a.length;j=i++){let A=a[i],B=a[j];if(((A.y>p.y)!=(B.y>p.y))&&(p.x<(B.x-A.x)*(p.y-A.y)/(B.y-A.y)+A.x))z=!z}return z}
 function md(m){mode=m;$("#bh").classList.toggle("on",m==="h");$("#bd").classList.toggle("on",m==="d")}
 $("#bh").onclick=()=>md("h");$("#bd").onclick=()=>md("d");
@@ -41,22 +42,28 @@ function modelCoords(){
  let all=[...h,...d],minx=Math.min(...all.map(p=>p.x)),miny=Math.min(...all.map(p=>p.y));
  return {H:h.map(p=>({x:(p.x-minx)/PX,y:(p.y-miny)/PX})),D:d.map(p=>({x:(p.x-minx)/PX,y:(p.y-miny)/PX}))}
 }
+let rotX=-0.55,rotZ=-0.65,zoom3=1,drag3=null;
 function d3(){
  let W=v.clientWidth,Hh=v.clientHeight;g.clearRect(0,0,W,Hh);g.fillStyle="#f7f8f9";g.fillRect(0,0,W,Hh);let M=modelCoords();if(!M){g.fillStyle="#555";g.fillText("Haus und Dach als Viereck schließen",16,28);return}
  let n=+$("#n").value||35,th=+$("#th").value||0,D=M.D,H=M.H;
  let L=D.map((p,i)=>dist(p,D[(i+1)%4])),e=(L[0]+L[2]>=L[1]+L[3])?0:1,op=(e+2)%4,a=D[e],b=D[(e+1)%4],c2=D[op],dd=D[(op+1)%4];
  let direct=dist(a,dd)+dist(b,c2),oa=direct<=dist(a,c2)+dist(b,dd)?dd:c2,ob=direct<=dist(a,c2)+dist(b,dd)?c2:dd,m1={x:(a.x+oa.x)/2,y:(a.y+oa.y)/2},m2={x:(b.x+ob.x)/2,y:(b.y+ob.y)/2},span=(dist(a,oa)+dist(b,ob))/2,rise=span/2*Math.tan(n*Math.PI/180);
  let all=[...H,...D],minx=Math.min(...all.map(p=>p.x)),maxx=Math.max(...all.map(p=>p.x)),miny=Math.min(...all.map(p=>p.y)),maxy=Math.max(...all.map(p=>p.y)),ww=maxx-minx,hh=maxy-miny,sc=Math.min(W/(ww+hh+2),Hh/(th+rise+(ww+hh)*.35+1))*.88,cx=W/2,cy=Hh*.78;
- const I=(p,z=0)=>({x:cx+((p.x-minx)-(p.y-miny)-(ww-hh)/2)*sc*.72,y:cy+((p.x-minx)+(p.y-miny)-(ww+hh)/2)*sc*.28-z*sc});
- let HB=H.map(p=>I(p,0)),HT=H.map(p=>I(p,th)),DE=D.map(p=>I(p,th)),R1=I(m1,th+rise),R2=I(m2,th+rise);
- // house walls from actual house footprint
- for(let i=0;i<4;i++){let j=(i+1)%4;g.beginPath();g.moveTo(HB[i].x,HB[i].y);g.lineTo(HB[j].x,HB[j].y);g.lineTo(HT[j].x,HT[j].y);g.lineTo(HT[i].x,HT[i].y);g.closePath();g.fillStyle="#e2e7ea";g.fill();g.strokeStyle="#607d8b";g.lineWidth=2;g.stroke()}
+ sc*=zoom3;let mx=(minx+maxx)/2,my=(miny+maxy)/2;
+ const I=(p,z=0)=>{let X=p.x-mx,Y=p.y-my,Z=z-th,cz=Math.cos(rotZ),sz=Math.sin(rotZ),cxr=Math.cos(rotX),sxr=Math.sin(rotX),xr=X*cz-Y*sz,yr=X*sz+Y*cz,yp=yr*cxr-Z*sxr,zp=yr*sxr+Z*cxr;return{x:W/2+xr*sc,y:Hh/2+yp*sc*.72}};
+ let DE=D.map(p=>I(p,th)),R1=I(m1,th+rise),R2=I(m2,th+rise);
+ // P5: 3D shows the roof only; house footprint remains a 2D calculation/reference layer.
  const di=p=>D.indexOf(p),A=DE[di(a)],B=DE[di(b)],OA=DE[di(oa)],OB=DE[di(ob)];
  function face(P,fill){g.beginPath();g.moveTo(P[0].x,P[0].y);P.slice(1).forEach(q=>g.lineTo(q.x,q.y));g.closePath();g.fillStyle=fill;g.fill();g.strokeStyle="#176b2c";g.lineWidth=2.5;g.stroke()}
  face([A,B,R2,R1],"#dfe9df");face([OA,OB,R2,R1],"#edf3ed");
  g.beginPath();g.moveTo(R1.x,R1.y);g.lineTo(R2.x,R2.y);g.strokeStyle="#d32f2f";g.lineWidth=5;g.stroke();
- g.fillStyle="#17202a";g.font="bold 15px Arial";g.fillText("Satteldach "+n+"°",16,Hh-48);g.font="14px Arial";g.fillText("Traufhöhe "+th.toFixed(2)+" m · Firsthöhe "+(th+rise).toFixed(2)+" m",16,Hh-24)
+ g.fillStyle="#17202a";g.font="bold 15px Arial";g.fillText("Satteldach "+n+"°",16,Hh-48);g.font="14px Arial";g.fillText("Dachhöhe Traufe–First "+rise.toFixed(2)+" m · Ziehen = drehen · 2 Finger = zoomen",16,Hh-24)
 }
-$("#b3").onclick=()=>{if(!modelCoords()){$("#msg").textContent="P4: Haus und Dachumriss zuerst als Viereck schließen.";return}$("#view3d").style.display="block";setTimeout(()=>{rs();d3()},0)};
-$("#back2d").onclick=()=>{$("#view3d").style.display="none";setTimeout(rs,0)};$("#n").oninput=d3;$("#th").oninput=d3;rs();
+$("#b3").onclick=()=>{if(!modelCoords()){$("#msg").textContent="P5: Haus und Dachumriss zuerst als Viereck schließen.";return}$("#view3d").style.display="block";setTimeout(()=>{rs();d3()},0)};
+$("#back2d").onclick=()=>{$("#view3d").style.display="none";setTimeout(rs,0)};
+let p3=new Map(),pinch3=null;
+v.onpointerdown=e=>{v.setPointerCapture(e.pointerId);p3.set(e.pointerId,{x:e.clientX,y:e.clientY});if(p3.size===1)drag3={x:e.clientX,y:e.clientY,rz:rotZ,rx:rotX};if(p3.size===2){let a=[...p3.values()];pinch3={d:dist(a[0],a[1]),z:zoom3}}};
+v.onpointermove=e=>{if(!p3.has(e.pointerId))return;p3.set(e.pointerId,{x:e.clientX,y:e.clientY});if(p3.size===1&&drag3){rotZ=drag3.rz+(e.clientX-drag3.x)*.008;rotX=Math.max(-1.35,Math.min(.2,drag3.rx+(e.clientY-drag3.y)*.006));d3()}else if(p3.size===2&&pinch3){let a=[...p3.values()],dd=dist(a[0],a[1]);zoom3=Math.max(.45,Math.min(3,pinch3.z*dd/pinch3.d));d3()}};
+function end3(e){p3.delete(e.pointerId);drag3=null;if(p3.size<2)pinch3=null}v.onpointerup=end3;v.onpointercancel=end3;
+$("#n").oninput=d3;$("#th").oninput=d3;rs();
 </script></body></html>

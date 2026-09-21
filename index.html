@@ -1,8 +1,10 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P8</title>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P8.1</title>
 <style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#eef1f3;overflow:hidden}header{height:48px;background:#17202a;color:#fff;padding:13px}#bar{height:50px;background:#fff;padding:6px;display:flex;gap:6px;overflow:auto}button,input{padding:7px;border:1px solid #999;border-radius:7px;background:#fff}button.on,.go{background:#176b2c;color:#fff}#w{height:calc(100vh - 98px);position:relative}canvas{width:100%;height:100%;touch-action:none;background:#fafafa}#v{background:#f7f8f9}#msg{position:absolute;left:8px;bottom:12px;background:#17202ae8;color:#fff;padding:8px;border-radius:7px;font-size:12px}</style></head><body>
-<header><b>Steildach Skizze</b> &nbsp; <small>P8 · 21.09.2026</small></header><div id="bar"><button id="bh" class="on">1 Haus</button><button id="bd">2 Dachumriss</button><span>Traufhöhe m</span><input id="th" type="number" value="3.00" min="0" step="0.10" style="width:72px"><span>Dachform</span><select id="roofType" style="padding:7px;border:1px solid #999;border-radius:7px;background:#fff">
+<header><b>Steildach Skizze</b> &nbsp; <small>P8.1 · 21.09.2026</small></header><div id="bar"><button id="bh" class="on">1 Haus</button><button id="bd">2 Dachumriss</button><span>Traufhöhe m</span><input id="th" type="number" value="3.00" min="0" step="0.10" style="width:72px"><span>Dachform</span><select id="roofType" style="padding:7px;border:1px solid #999;border-radius:7px;background:#fff">
 <option value="gable">Satteldach</option><option value="hip">Walmdach</option><option value="halfhip">Krüppelwalmdach</option><option value="pyramid">Zeltdach</option>
-</select><span>Neigung °</span><input id="n" type="number" value="35" min="1" max="70" style="width:62px"><button id="fitBtn">⊡ Einpassen</button><button id="squareBtn">□ 90°</button><button id="centerBtn">◎ Symmetrisch</button><button id="partBtn">+ Bauteil</button><button id="b3" class="go">3D Ansicht</button><button id="neu">Neu</button></div>
+</select><span id="slopeLbl">Neigung °</span><input id="n" type="number" value="35" min="1" max="70" step="0.1" style="width:62px">
+<span id="ridgeLbl" style="display:none">First m</span><input id="ridgeLen" type="number" value="3.00" min="0.10" step="0.10" style="width:72px;display:none">
+<span id="riseLbl" style="display:none">Dachhöhe m</span><input id="roofRise" type="number" value="2.00" min="0.01" step="0.05" style="width:72px;display:none"><button id="fitBtn">⊡ Einpassen</button><button id="squareBtn">□ 90°</button><button id="centerBtn">◎ Symmetrisch</button><button id="partBtn">+ Bauteil</button><button id="b3" class="go">3D Ansicht</button><button id="neu">Neu</button></div>
 <div id="partDlg" style="display:none;position:fixed;inset:0;background:#0008;z-index:21;align-items:center;justify-content:center">
 <div style="background:white;padding:18px;border-radius:12px;width:min(90vw,380px)">
 <b>Bauteil auswählen</b>
@@ -127,13 +129,36 @@ function modelCoords(){
  return {H:h.map(p=>({x:(p.x-minx)/PX,y:(p.y-miny)/PX})),D:d.map(p=>({x:(p.x-minx)/PX,y:(p.y-miny)/PX}))}
 }
 let rotX=-0.55,rotZ=-0.65,zoom3=1,drag3=null;
+
+function roofInputs(){
+ let typ=$("#roofType").value,hip=(typ==="hip"||typ==="halfhip");
+ $("#slopeLbl").style.display=hip?"none":"inline";$("#n").style.display=hip?"none":"inline-block";
+ $("#ridgeLbl").style.display=hip?"inline":"none";$("#ridgeLen").style.display=hip?"inline-block":"none";
+ $("#riseLbl").style.display=hip?"inline":"none";$("#roofRise").style.display=hip?"inline-block":"none"
+}
+function roofCalc(D,typ){
+ let L=D.map((p,i)=>dist(p,D[(i+1)%4])),e=(L[0]+L[2]>=L[1]+L[3])?0:1,op=(e+2)%4,a=D[e],b=D[(e+1)%4],c2=D[op],dd=D[(op+1)%4];
+ let direct=dist(a,dd)+dist(b,c2),oa=direct<=dist(a,c2)+dist(b,dd)?dd:c2,ob=direct<=dist(a,c2)+dist(b,dd)?c2:dd;
+ let m1={x:(a.x+oa.x)/2,y:(a.y+oa.y)/2},m2={x:(b.x+ob.x)/2,y:(b.y+ob.y)/2},axis=dist(m1,m2),span=(dist(a,oa)+dist(b,ob))/2;
+ let rise,angle,ridge=axis;
+ if(typ==="hip"||typ==="halfhip"){
+   ridge=Math.max(.01,+$("#ridgeLen").value||0);
+   rise=Math.max(.01,+$("#roofRise").value||0);
+   ridge=Math.min(ridge,axis*.98);
+   // horizontal run of the main roof slope = half building span
+   angle=Math.atan2(rise,span/2)*180/Math.PI;
+ }else{
+   angle=+$("#n").value||35;rise=span/2*Math.tan(angle*Math.PI/180);
+ }
+ let ux=(m2.x-m1.x)/(axis||1),uy=(m2.y-m1.y)/(axis||1),cx=(m1.x+m2.x)/2,cy=(m1.y+m2.y)/2;
+ let r1={x:cx-ux*ridge/2,y:cy-uy*ridge/2},r2={x:cx+ux*ridge/2,y:cy+uy*ridge/2};
+ return {a,b,oa,ob,m1,m2,r1,r2,span,axis,rise,angle,ridge}
+}
+
 function d3(){
  let W=v.clientWidth,Hh=v.clientHeight;g.clearRect(0,0,W,Hh);g.fillStyle="#f7f8f9";g.fillRect(0,0,W,Hh);
  let M=modelCoords();if(!M){g.fillStyle="#555";g.font="15px Arial";g.fillText("Haus und Dach als Viereck schließen",16,28);return}
- let n=+$("#n").value||35,typ=$("#roofType").value,D=M.D;
- let L=D.map((p,i)=>dist(p,D[(i+1)%4])),e=(L[0]+L[2]>=L[1]+L[3])?0:1,op=(e+2)%4,a=D[e],b=D[(e+1)%4],c2=D[op],dd=D[(op+1)%4];
- let direct=dist(a,dd)+dist(b,c2),oa=direct<=dist(a,c2)+dist(b,dd)?dd:c2,ob=direct<=dist(a,c2)+dist(b,dd)?c2:dd;
- let span=(dist(a,oa)+dist(b,ob))/2,rise=span/2*Math.tan(n*Math.PI/180);
+ let typ=$("#roofType").value,D=M.D,Q=roofCalc(D,typ),n=Q.angle,a=Q.a,b=Q.b,oa=Q.oa,ob=Q.ob,rise=Q.rise;
  let minx=Math.min(...D.map(p=>p.x)),maxx=Math.max(...D.map(p=>p.x)),miny=Math.min(...D.map(p=>p.y)),maxy=Math.max(...D.map(p=>p.y)),ww=maxx-minx,hh=maxy-miny;
  let sc=Math.min(W/(ww+hh+2),Hh/(rise+(ww+hh)*.5+2))*.95*zoom3,mx=(minx+maxx)/2,my=(miny+maxy)/2;
  // Top/side only: positive screen elevation always means roof rises toward viewer.
@@ -141,7 +166,7 @@ function d3(){
  const I=(p,z=0)=>{let X=p.x-mx,Y=p.y-my,cz=Math.cos(rotZ),sz=Math.sin(rotZ),xr=X*cz-Y*sz,yr=X*sz+Y*cz;return{x:W/2+xr*sc,y:Hh*.56+yr*sc*.38-z*sc*.72}};
  let E=D.map(p=>I(p,0)),idx=p=>D.indexOf(p),A=E[idx(a)],B=E[idx(b)],OA=E[idx(oa)],OB=E[idx(ob)];
  function face(P,fill){g.beginPath();g.moveTo(P[0].x,P[0].y);P.slice(1).forEach(q=>g.lineTo(q.x,q.y));g.closePath();g.fillStyle=fill;g.fill();g.strokeStyle="#176b2c";g.lineWidth=2.5;g.stroke()}
- let m1={x:(a.x+oa.x)/2,y:(a.y+oa.y)/2},m2={x:(b.x+ob.x)/2,y:(b.y+ob.y)/2};
+ let m1=Q.m1,m2=Q.m2;
  if(typ==="gable"){
    let R1=I(m1,rise),R2=I(m2,rise);face([A,B,R2,R1],"#dfe9df");face([OA,OB,R2,R1],"#edf3ed");
    g.beginPath();g.moveTo(R1.x,R1.y);g.lineTo(R2.x,R2.y);g.strokeStyle="#d32f2f";g.lineWidth=6;g.stroke()
@@ -149,13 +174,12 @@ function d3(){
    let C=I({x:(a.x+b.x+oa.x+ob.x)/4,y:(a.y+b.y+oa.y+ob.y)/4},rise);
    [[A,B],[B,OB],[OB,OA],[OA,A]].forEach((z,i)=>face([z[0],z[1],C],i%2?"#edf3ed":"#dfe9df"))
  }else{
-   let frac=typ==="halfhip"?.28:.18;
-   let r1={x:m1.x+(m2.x-m1.x)*frac,y:m1.y+(m2.y-m1.y)*frac},r2={x:m2.x+(m1.x-m2.x)*frac,y:m2.y+(m1.y-m2.y)*frac},R1=I(r1,rise),R2=I(r2,rise);
+   let R1=I(Q.r1,rise),R2=I(Q.r2,rise);
    face([A,B,R2,R1],"#dfe9df");face([OA,OB,R2,R1],"#edf3ed");face([A,OA,R1],"#e7efe7");face([B,OB,R2],"#e7efe7");
    g.beginPath();g.moveTo(R1.x,R1.y);g.lineTo(R2.x,R2.y);g.strokeStyle="#d32f2f";g.lineWidth=5;g.stroke()
  }
  let names={gable:"Satteldach",hip:"Walmdach",halfhip:"Krüppelwalmdach",pyramid:"Zeltdach"};
- g.fillStyle="#17202a";g.font="bold 15px Arial";g.fillText(names[typ]+" · "+n+"°",16,Hh-48);g.font="14px Arial";g.fillText("Ansicht: oben / seitlich · Ziehen = drehen · 2 Finger = zoomen",16,Hh-24)
+ g.fillStyle="#17202a";g.font="bold 15px Arial";g.fillText(names[typ]+" · "+n.toFixed(1)+"°"+((typ==="hip"||typ==="halfhip")?" · First "+Q.ridge.toFixed(2)+" m":""),16,Hh-48);g.font="14px Arial";g.fillText("Ansicht: oben / seitlich · Ziehen = drehen · 2 Finger = zoomen",16,Hh-24)
 }
 $("#b3").onclick=()=>{if(!modelCoords()){$("#msg").textContent="P5: Haus und Dachumriss zuerst als Viereck schließen.";return}$("#view3d").style.display="block";setTimeout(()=>{rs();d3()},0)};
 $("#back2d").onclick=()=>{$("#view3d").style.display="none";setTimeout(rs,0)};
@@ -168,5 +192,7 @@ let p3=new Map(),pinch3=null;
 v.onpointerdown=e=>{v.setPointerCapture(e.pointerId);p3.set(e.pointerId,{x:e.clientX,y:e.clientY});if(p3.size===1)drag3={x:e.clientX,y:e.clientY,rz:rotZ,rx:rotX};if(p3.size===2){let a=[...p3.values()];pinch3={d:dist(a[0],a[1]),z:zoom3}}};
 v.onpointermove=e=>{if(!p3.has(e.pointerId))return;p3.set(e.pointerId,{x:e.clientX,y:e.clientY});if(p3.size===1&&drag3){rotZ=drag3.rz+(e.clientX-drag3.x)*.008;rotX=Math.max(-1.30,Math.min(-0.18,drag3.rx+(e.clientY-drag3.y)*.006));d3()}else if(p3.size===2&&pinch3){let a=[...p3.values()],dd=dist(a[0],a[1]);zoom3=Math.max(.45,Math.min(3,pinch3.z*dd/pinch3.d));d3()}};
 function end3(e){p3.delete(e.pointerId);drag3=null;if(p3.size<2)pinch3=null}v.onpointerup=end3;v.onpointercancel=end3;
-$("#n").oninput=d3;$("#th").oninput=d3;$("#roofType").onchange=d3;rs();
+$("#n").oninput=d3;$("#th").oninput=d3;
+function roofChanged(){roofInputs();let typ=$("#roofType").value;if((typ==="hip"||typ==="halfhip")&&modelCoords()){let q=roofCalc(modelCoords().D,typ);$("#n").value=q.angle.toFixed(1)}d3()}
+$("#roofType").onchange=roofChanged;$("#ridgeLen").oninput=roofChanged;$("#roofRise").oninput=roofChanged;roofInputs();rs();
 </script></body></html>

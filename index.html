@@ -1,6 +1,6 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P6</title>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P7</title>
 <style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#eef1f3;overflow:hidden}header{height:48px;background:#17202a;color:#fff;padding:13px}#bar{height:50px;background:#fff;padding:6px;display:flex;gap:6px;overflow:auto}button,input{padding:7px;border:1px solid #999;border-radius:7px;background:#fff}button.on,.go{background:#176b2c;color:#fff}#w{height:calc(100vh - 98px);position:relative}canvas{width:100%;height:100%;touch-action:none;background:#fafafa}#v{background:#f7f8f9}#msg{position:absolute;left:8px;bottom:12px;background:#17202ae8;color:#fff;padding:8px;border-radius:7px;font-size:12px}</style></head><body>
-<header><b>Steildach Skizze</b> &nbsp; <small>P6 · 21.09.2026</small></header><div id="bar"><button id="bh" class="on">1 Haus</button><button id="bd">2 Dachumriss</button><span>Traufhöhe m</span><input id="th" type="number" value="3.00" min="0" step="0.10" style="width:72px"><span>Neigung °</span><input id="n" type="number" value="35" min="1" max="70" style="width:62px"><button id="squareBtn">□ 90°</button><button id="centerBtn">◎ Symmetrisch</button><button id="partBtn">+ Bauteil</button><button id="b3" class="go">3D Ansicht</button><button id="neu">Neu</button></div>
+<header><b>Steildach Skizze</b> &nbsp; <small>P7 · 21.09.2026</small></header><div id="bar"><button id="bh" class="on">1 Haus</button><button id="bd">2 Dachumriss</button><span>Traufhöhe m</span><input id="th" type="number" value="3.00" min="0" step="0.10" style="width:72px"><span>Neigung °</span><input id="n" type="number" value="35" min="1" max="70" style="width:62px"><button id="fitBtn">⊡ Einpassen</button><button id="squareBtn">□ 90°</button><button id="centerBtn">◎ Symmetrisch</button><button id="partBtn">+ Bauteil</button><button id="b3" class="go">3D Ansicht</button><button id="neu">Neu</button></div>
 <div id="partDlg" style="display:none;position:fixed;inset:0;background:#0008;z-index:21;align-items:center;justify-content:center">
 <div style="background:white;padding:18px;border-radius:12px;width:min(90vw,380px)">
 <b>Bauteil auswählen</b>
@@ -18,6 +18,7 @@
 const c=$("#c"),v=$("#v"),x=c.getContext("2d"),g=v.getContext("2d"),PX=45;
 function $(q){return document.querySelector(q)}
 let mode="h",h=[],d=[],hc=false,dc=false,hm=[],dm=[],drag=null,press=null,lastAction=[],cornerDrag=null;
+let viewScale=1,viewX=0,viewY=0,viewTouches=new Map(),viewPinch=null,panView=null;
 function rs(){c.width=c.clientWidth*devicePixelRatio;c.height=c.clientHeight*devicePixelRatio;x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);v.width=v.clientWidth*devicePixelRatio;v.height=v.clientHeight*devicePixelRatio;g.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);dr();d3()}
 addEventListener("resize",rs);
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),near=(a,b,r=22)=>dist(a,b)<r;
@@ -27,12 +28,12 @@ function pl(a,col,closed,ms){
  a.forEach((p,i)=>{x.beginPath();x.arc(p.x,p.y,5,0,7);x.fillStyle=col;x.fill();x.fillStyle="#111";x.font="12px Arial";x.fillText("P"+(i+1),p.x+7,p.y-7)});
  let n=closed?a.length:a.length-1;for(let i=0;i<n;i++){let q=a[i],r=a[(i+1)%a.length],val=measure(a,ms,i);x.fillStyle="#111";x.font="bold 12px Arial";x.fillText(val.toFixed(2)+" m",(q.x+r.x)/2+5,(q.y+r.y)/2-5)}
 }
-function dr(){x.clearRect(0,0,c.clientWidth,c.clientHeight);let GRID=15;x.strokeStyle="#e2e5e8";x.lineWidth=1;for(let a=0;a<c.clientWidth;a+=GRID){x.beginPath();x.moveTo(a,0);x.lineTo(a,c.clientHeight);x.stroke()}for(let a=0;a<c.clientHeight;a+=GRID){x.beginPath();x.moveTo(0,a);x.lineTo(c.clientWidth,a);x.stroke()}pl(h,"#0d47a1",hc,hm);pl(d,"#198038",dc,dm);drawParts()}
+function dr(){x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);x.clearRect(0,0,c.clientWidth,c.clientHeight);let GRID=15;x.strokeStyle="#e2e5e8";x.lineWidth=1;for(let a=0;a<c.clientWidth;a+=GRID){x.beginPath();x.moveTo(a,0);x.lineTo(a,c.clientHeight);x.stroke()}for(let a=0;a<c.clientHeight;a+=GRID){x.beginPath();x.moveTo(0,a);x.lineTo(c.clientWidth,a);x.stroke()}x.save();x.translate(viewX,viewY);x.scale(viewScale,viewScale);pl(h,"#0d47a1",hc,hm);pl(d,"#198038",dc,dm);drawParts();x.restore()}
 function edgeHit(p,a,closed){let n=closed?a.length:a.length-1,best=-1,bd=24;for(let i=0;i<n;i++){let A=a[i],B=a[(i+1)%a.length],vx=B.x-A.x,vy=B.y-A.y,L=vx*vx+vy*vy,t=L?Math.max(0,Math.min(1,((p.x-A.x)*vx+(p.y-A.y)*vy)/L)):0,q={x:A.x+t*vx,y:A.y+t*vy},dd=dist(p,q);if(dd<bd){bd=dd;best=i}}return best}
 let edgeEdit=null;
 function setEdge(a,ms,i){edgeEdit={a,ms,i};$("#edgeTitle").textContent=(a===h?"Haus":"Dach")+" – Kante K"+(i+1)+" in Meter";$("#edgeVal").value=measure(a,ms,i).toFixed(2);$("#edgeDlg").style.display="flex";setTimeout(()=>{$("#edgeVal").focus();$("#edgeVal").select()},50)}
 $("#edgeCancel").onclick=()=>{$("#edgeDlg").style.display="none";edgeEdit=null};
-$("#edgeOK").onclick=()=>{if(!edgeEdit)return;let {a,ms,i}=edgeEdit,val=parseFloat(String($("#edgeVal").value).replace(",","."));if(!(val>0))return;lastAction.push({kind:"measure",ms,i,old:ms[i]});ms[i]=val;let A=a[i],j=(i+1)%a.length,B=a[j],L=dist(A,B)||1,newL=val*PX,oldB={...B};lastAction.push({kind:"point",a,j,old:oldB});B.x=A.x+(B.x-A.x)/L*newL;B.y=A.y+(B.y-A.y)/L*newL;if(a.length===4){ms[(i+2)%4]=val;let rr=rectFromBounds(a),w=(i%2===0?val:(ms[(i+1)%4]||measure(a,ms,(i+1)%4))),hh=(i%2===1?val:(ms[(i+1)%4]||measure(a,ms,(i+1)%4)));/* visual geometry is squared by button when desired */}$("#edgeDlg").style.display="none";edgeEdit=null;dr()};
+$("#edgeOK").onclick=()=>{if(!edgeEdit)return;let {a,ms,i}=edgeEdit,val=parseFloat(String($("#edgeVal").value).replace(",","."));if(!(val>0))return;lastAction.push({kind:"measure",ms,i,old:ms[i]});ms[i]=val;let A=a[i],j=(i+1)%a.length,B=a[j],L=dist(A,B)||1,newL=val*PX,oldB={...B};lastAction.push({kind:"point",a,j,old:oldB});B.x=A.x+(B.x-A.x)/L*newL;B.y=A.y+(B.y-A.y)/L*newL;if(a.length===4){ms[(i+2)%4]=val;let rr=rectFromBounds(a),w=(i%2===0?val:(ms[(i+1)%4]||measure(a,ms,(i+1)%4))),hh=(i%2===1?val:(ms[(i+1)%4]||measure(a,ms,(i+1)%4)));/* visual geometry is squared by button when desired */}$("#edgeDlg").style.display="none";edgeEdit=null;fit2D()};
 function inside(p,a){let z=false;for(let i=0,j=a.length-1;i<a.length;j=i++){let A=a[i],B=a[j];if(((A.y>p.y)!=(B.y>p.y))&&(p.x<(B.x-A.x)*(p.y-A.y)/(B.y-A.y)+A.x))z=!z}return z}
 
 function cornerHit(p,a){let best=-1,bd=24;a.forEach((q,i)=>{let dd=dist(p,q);if(dd<bd){bd=dd;best=i}});return best}
@@ -48,34 +49,37 @@ function rectFromBounds(a){
 function make90(a,ms){
  if(a.length!==4)return;
  let old=a.map(p=>({...p}));lastAction.push({kind:"shape",a,old});
- let r=rectFromBounds(a);a.forEach((p,i)=>Object.assign(p,r[i]));
- // Opposite sides of a rectangle must carry the same real dimension.
- let L0=ms[0]>0?ms[0]:measure(a,ms,0),L1=ms[1]>0?ms[1]:measure(a,ms,1);
- ms[0]=ms[2]=L0;ms[1]=ms[3]=L1;dr()
+ let cx=a.reduce((z,p)=>z+p.x,0)/4,cy=a.reduce((z,p)=>z+p.y,0)/4;
+ let w=(ms[0]>0?ms[0]*PX:(dist(a[0],a[1])+dist(a[2],a[3]))/2);
+ let hh=(ms[1]>0?ms[1]*PX:(dist(a[1],a[2])+dist(a[3],a[0]))/2);
+ // orientation from first edge, then force all four corners to exact 90 degrees
+ let ang=Math.atan2(a[1].y-a[0].y,a[1].x-a[0].x),ux={x:Math.cos(ang),y:Math.sin(ang)},uy={x:-Math.sin(ang),y:Math.cos(ang)};
+ let pts=[[-w/2,-hh/2],[w/2,-hh/2],[w/2,hh/2],[-w/2,hh/2]].map(([X,Y])=>({x:cx+X*ux.x+Y*uy.x,y:cy+X*ux.y+Y*uy.y}));
+ a.forEach((p,i)=>Object.assign(p,pts[i]));
+ ms[0]=ms[2]=w/PX;ms[1]=ms[3]=hh/PX;dr()
 }
 $("#squareBtn").onclick=()=>{let a=mode==="h"?h:d,ms=mode==="h"?hm:dm,cl=mode==="h"?hc:dc;if(!cl||a.length!==4){$("#msg").textContent="Erst den gewählten Umriss als Viereck schließen.";return}make90(a,ms);$("#msg").textContent=(mode==="h"?"Haus":"Dach")+" exakt auf 90° gestellt."};
 $("#centerBtn").onclick=()=>{
  if(!hc||!dc||h.length!==4||d.length!==4){$("#msg").textContent="Haus und Dach zuerst als Viereck schließen.";return}
  make90(h,hm);make90(d,dm);
- let hx=(Math.min(...h.map(p=>p.x))+Math.max(...h.map(p=>p.x)))/2,hy=(Math.min(...h.map(p=>p.y))+Math.max(...h.map(p=>p.y)))/2;
- let dx=(Math.min(...d.map(p=>p.x))+Math.max(...d.map(p=>p.x)))/2,dy=(Math.min(...d.map(p=>p.y))+Math.max(...d.map(p=>p.y)))/2;
- let old=d.map(p=>({...p}));lastAction.push({kind:"move",a:d,old});d.forEach(p=>{p.x+=hx-dx;p.y+=hy-dy});dr();
- $("#msg").textContent="Haus und Dach rechtwinklig und mittig ausgerichtet – Überstand links/rechts bzw. oben/unten gleich verteilt."
+ let hx=h.reduce((z,p)=>z+p.x,0)/4,hy=h.reduce((z,p)=>z+p.y,0)/4,dx=d.reduce((z,p)=>z+p.x,0)/4,dy=d.reduce((z,p)=>z+p.y,0)/4;
+ let old=d.map(p=>({...p}));lastAction.push({kind:"move",a:d,old});d.forEach(p=>{p.x+=hx-dx;p.y+=hy-dy});
+ fit2D();$("#msg").textContent="Symmetrisch: Haus und Dach exakt mittig. Gegenüberliegende Überstände sind gleich."
 };
 
 function md(m){mode=m;$("#bh").classList.toggle("on",m==="h");$("#bd").classList.toggle("on",m==="d")}
 $("#bh").onclick=()=>md("h");$("#bd").onclick=()=>md("d");
-c.onpointerdown=e=>{c.setPointerCapture(e.pointerId);let r=c.getBoundingClientRect(),p={x:e.clientX-r.left,y:e.clientY-r.top},a=mode==="h"?h:d,closed=mode==="h"?hc:dc,ms=mode==="h"?hm:dm;
+c.onpointerdown=e=>{c.setPointerCapture(e.pointerId);let r=c.getBoundingClientRect(),p={x:(e.clientX-r.left-viewX)/viewScale,y:(e.clientY-r.top-viewY)/viewScale},a=mode==="h"?h:d,closed=mode==="h"?hc:dc,ms=mode==="h"?hm:dm;
  if(closed){let ci=cornerHit(p,a);if(ci>=0){cornerDrag={a,i:ci,old:a.map(q=>({...q}))};$("#msg").textContent="Eckpunkt ziehen.";return}let ei=edgeHit(p,a,true);if(ei>=0){press={p,t:Date.now(),a,ms,ei,moved:false};return}if(inside(p,a)){press={p,t:Date.now(),a,ms,ei:-1,moved:false};return}return}
  if(a.length>=3&&near(p,a[0])){if(mode==="h")hc=true;else dc=true;lastAction.push({kind:"close",m:mode});$("#msg").textContent=mode==="h"?"Haus fertig. Kante antippen = Metermaß. Länger in Fläche drücken = verschieben.":"Dach fertig. Kante antippen = Metermaß. Länger in Fläche drücken = verschieben.";dr();return}
  a.push(p);ms.push(0);lastAction.push({kind:"add",a,ms});dr()
 };
-c.onpointermove=e=>{let rr=c.getBoundingClientRect(),pp={x:e.clientX-rr.left,y:e.clientY-rr.top};if(cornerDrag){cornerDrag.a[cornerDrag.i].x=pp.x;cornerDrag.a[cornerDrag.i].y=pp.y;dr();return}if(!press)return;let r=c.getBoundingClientRect(),p={x:e.clientX-r.left,y:e.clientY-r.top};if(dist(p,press.p)>8)press.moved=true;
+c.onpointermove=e=>{let rr=c.getBoundingClientRect(),pp={x:(e.clientX-rr.left-viewX)/viewScale,y:(e.clientY-rr.top-viewY)/viewScale};if(cornerDrag){cornerDrag.a[cornerDrag.i].x=pp.x;cornerDrag.a[cornerDrag.i].y=pp.y;dr();return}if(!press)return;let r=c.getBoundingClientRect(),p={x:(e.clientX-r.left-viewX)/viewScale,y:(e.clientY-r.top-viewY)/viewScale};if(dist(p,press.p)>8/viewScale)press.moved=true;
  if(!drag&&press.ei<0&&Date.now()-press.t>450){drag={a:press.a,start:p,base:press.a.map(q=>({...q}))};$("#msg").textContent="Gesamten Umriss verschieben."}
  if(drag){let dx=p.x-drag.start.x,dy=p.y-drag.start.y;drag.a.forEach((q,i)=>{q.x=drag.base[i].x+dx;q.y=drag.base[i].y+dy});dr()}
 };
 c.onpointerup=e=>{if(cornerDrag){lastAction.push({kind:"shape",a:cornerDrag.a,old:cornerDrag.old});cornerDrag=null;dr();return}if(!press)return;if(drag){lastAction.push({kind:"move",a:drag.a,old:drag.base});drag=null;press=null;dr();return}if(!press.moved&&Date.now()-press.t<650&&press.ei>=0)setEdge(press.a,press.ms,press.ei);press=null};
-$("#neu").onclick=()=>{h=[];d=[];hm=[];dm=[];parts=[];hc=dc=false;lastAction=[];md("h");dr();d3()};
+$("#neu").onclick=()=>{h=[];d=[];hm=[];dm=[];parts=[];hc=dc=false;lastAction=[];viewScale=1;viewX=viewY=0;md("h");dr();d3()};
 let undo=document.createElement("button");undo.textContent="↶ Schritt zurück";$("#neu").before(undo);undo.onclick=()=>{let z=lastAction.pop();if(!z)return;if(z.kind==="add"){z.a.pop();z.ms.pop()}else if(z.kind==="close"){if(z.m==="h")hc=false;else dc=false}else if(z.kind==="measure")z.ms[z.i]=z.old;else if(z.kind==="point")z.a[z.j]=z.old;else if(z.kind==="move"||z.kind==="shape")z.a.forEach((q,i)=>Object.assign(q,z.old[i]));dr()};
 
 let parts=[];
@@ -102,6 +106,18 @@ $("#partBtn").onclick=()=>$("#partDlg").style.display="flex";
 $("#partCancel").onclick=()=>$("#partDlg").style.display="none";
 document.querySelectorAll("[data-part]").forEach(b=>b.onclick=()=>{$("#partDlg").style.display="none";addPart(b.dataset.part)});
 
+
+function fit2D(){
+ let all=[...h,...d];if(!all.length){viewScale=1;viewX=viewY=0;dr();return}
+ let minx=Math.min(...all.map(p=>p.x)),maxx=Math.max(...all.map(p=>p.x)),miny=Math.min(...all.map(p=>p.y)),maxy=Math.max(...all.map(p=>p.y));
+ let pad=45,w=Math.max(1,maxx-minx),hh=Math.max(1,maxy-miny);
+ viewScale=Math.min((c.clientWidth-pad*2)/w,(c.clientHeight-pad*2)/hh,2);
+ viewScale=Math.max(.08,viewScale);
+ viewX=(c.clientWidth-w*viewScale)/2-minx*viewScale;
+ viewY=(c.clientHeight-hh*viewScale)/2-miny*viewScale;dr()
+}
+$("#fitBtn").onclick=fit2D;
+
 function modelCoords(){
  if(!hc||!dc||h.length!==4||d.length!==4)return null;
  // Use common 2D origin and one common metric scale. This preserves the visible roof overhang.
@@ -127,6 +143,11 @@ function d3(){
 }
 $("#b3").onclick=()=>{if(!modelCoords()){$("#msg").textContent="P5: Haus und Dachumriss zuerst als Viereck schließen.";return}$("#view3d").style.display="block";setTimeout(()=>{rs();d3()},0)};
 $("#back2d").onclick=()=>{$("#view3d").style.display="none";setTimeout(rs,0)};
+
+c.addEventListener("pointerdown",e=>{viewTouches.set(e.pointerId,{x:e.clientX,y:e.clientY});if(viewTouches.size===2){let a=[...viewTouches.values()],dd=dist(a[0],a[1]);viewPinch={d:dd,s:viewScale,x:viewX,y:viewY,mx:(a[0].x+a[1].x)/2,my:(a[0].y+a[1].y)/2}}},true);
+c.addEventListener("pointermove",e=>{if(!viewTouches.has(e.pointerId))return;viewTouches.set(e.pointerId,{x:e.clientX,y:e.clientY});if(viewTouches.size===2&&viewPinch){let a=[...viewTouches.values()],dd=dist(a[0],a[1]),mx=(a[0].x+a[1].x)/2,my=(a[0].y+a[1].y)/2,ns=Math.max(.08,Math.min(5,viewPinch.s*dd/viewPinch.d));let wx=(viewPinch.mx-viewPinch.x)/viewPinch.s,wy=(viewPinch.my-viewPinch.y)/viewPinch.s;viewScale=ns;viewX=mx-wx*ns;viewY=my-wy*ns;dr();e.preventDefault()}},true);
+function endView(e){viewTouches.delete(e.pointerId);if(viewTouches.size<2)viewPinch=null}c.addEventListener("pointerup",endView,true);c.addEventListener("pointercancel",endView,true);
+
 let p3=new Map(),pinch3=null;
 v.onpointerdown=e=>{v.setPointerCapture(e.pointerId);p3.set(e.pointerId,{x:e.clientX,y:e.clientY});if(p3.size===1)drag3={x:e.clientX,y:e.clientY,rz:rotZ,rx:rotX};if(p3.size===2){let a=[...p3.values()];pinch3={d:dist(a[0],a[1]),z:zoom3}}};
 v.onpointermove=e=>{if(!p3.has(e.pointerId))return;p3.set(e.pointerId,{x:e.clientX,y:e.clientY});if(p3.size===1&&drag3){rotZ=drag3.rz+(e.clientX-drag3.x)*.008;rotX=Math.max(-1.35,Math.min(-0.08,drag3.rx+(e.clientY-drag3.y)*.006));d3()}else if(p3.size===2&&pinch3){let a=[...p3.values()],dd=dist(a[0],a[1]);zoom3=Math.max(.45,Math.min(3,pinch3.z*dd/pinch3.d));d3()}};

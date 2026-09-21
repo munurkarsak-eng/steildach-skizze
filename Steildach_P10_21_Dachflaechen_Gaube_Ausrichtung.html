@@ -1,0 +1,657 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P10.21</title>
+<style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#eef1f3;overflow:hidden}header{height:48px;background:#17202a;color:#fff;padding:13px}#bar{height:50px;background:#fff;padding:6px;display:flex;gap:6px;overflow:auto}button,input{padding:7px;border:1px solid #999;border-radius:7px;background:#fff}button.on,.go{background:#176b2c;color:#fff}#w{height:calc(100vh - 98px);position:relative}canvas{width:100%;height:100%;touch-action:none;background:#fafafa}#v{background:#f7f8f9}#msg{position:absolute;left:8px;bottom:12px;background:#17202ae8;color:#fff;padding:8px;border-radius:7px;font-size:12px}</style></head><body>
+<header><b>Steildach Skizze</b> &nbsp; <small>P10.21 · 21.09.2026</small></header>
+<div id="bar">
+<button id="bd" class="on">Dachumriss</button>
+<select id="roofType" style="padding:7px;border:1px solid #999;border-radius:7px;background:#fff">
+<option value="gable">Satteldach</option>
+<option value="hip">Walmdach</option>
+<option value="halfhip">Krüppelwalmdach</option>
+<option value="pyramid">Zeltdach</option>
+</select>
+<button id="fitBtn">⊡ Einpassen</button>
+<button id="squareBtn">□ 90°</button>
+<button id="partBtn">+ Bauteil</button>
+<label style="display:flex;align-items:center;gap:3px;white-space:nowrap;font-size:12px">Sparren
+<input id="rafterW" type="number" value="8" min="4" max="30" step="1" style="width:54px" title="Sparrenbreite cm"> ×
+<input id="rafterH" type="number" value="24" min="8" max="50" step="1" style="width:54px" title="Sparrenhöhe cm"> cm</label>
+<select id="activeFace" style="padding:7px;border:1px solid #999;border-radius:7px;background:#fff" title="Aktive Dachfläche"></select>
+<button id="b3" class="go">3D Ansicht</button>
+<button id="neu">Neu</button>
+</div>
+<div id="roofData" style="display:none;position:absolute;top:104px;left:8px;z-index:4;background:#fff;border:1px solid #bbb;border-radius:10px;padding:8px;font-size:13px;box-shadow:0 2px 8px #0002">
+<b>Walm-Dreieck</b> · rote Linien antippen<br>
+<span id="roofDataText">Lauf – · Höhe – · Neigung –</span>
+</div>
+<div id="triDlg" style="display:none;position:fixed;inset:0;background:#0008;z-index:26;align-items:center;justify-content:center">
+<div style="background:white;padding:18px;border-radius:12px;width:min(88vw,360px)">
+<b id="triTitle">Walm-Dreieck</b>
+<div style="margin:12px 0"><input id="triVal" type="number" step="0.01" inputmode="decimal" style="width:100%;font-size:20px" placeholder="Meter"></div>
+<div style="display:flex;gap:8px;justify-content:flex-end"><button id="triCancel">Abbrechen</button><button id="triOK" class="go">Übernehmen</button></div>
+</div></div>
+<div id="partEditDlg" style="display:none;position:fixed;inset:0;background:#0008;z-index:24;align-items:center;justify-content:center">
+<div style="background:white;padding:18px;border-radius:12px;width:min(90vw,380px)">
+<b id="partEditTitle">Bauteil</b>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+<label>Länge m<input id="partL" type="number" step="0.10" inputmode="decimal" style="width:100%"></label>
+<label>Breite m<input id="partB" type="number" step="0.10" inputmode="decimal" style="width:100%"></label>
+<label>Höhe m<input id="partH" type="number" step="0.10" inputmode="decimal" style="width:100%"></label><label id="dormerTypeLbl" style="display:none;grid-column:1/3">Gaubenform
+<select id="dormerType" style="width:100%;padding:7px">
+<option value="shed">Schleppgaube</option>
+<option value="gable">Satteldachgaube</option>
+<option value="flat">Flachdachgaube</option>
+</select></label><div id="placeFields" style="grid-column:1/3;border-top:1px solid #ddd;padding-top:10px;margin-top:4px">
+<b>Position auf dem Dach</b>
+<label style="display:block;margin-top:8px">Dachseite<select id="partFace" style="width:100%;padding:7px"></select></label>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+<label>Abstand links m<input id="partLeft" type="number" step="0.10" inputmode="decimal" style="width:100%"></label>
+<label>Abstand Traufe m<input id="partEave" type="number" step="0.10" inputmode="decimal" style="width:100%"></label>
+<label style="grid-column:1/3">Drehung °<input id="partRot" type="number" value="0" step="1" style="width:100%"></label>
+</div></div>
+<div id="partRoofFields" style="display:none;grid-column:1/3;border-top:1px solid #ddd;padding-top:10px">
+<label>Dachform<select id="partRoofType" style="width:100%;padding:7px"><option value="gable">Satteldach</option><option value="hip">Walmdach</option><option value="halfhip">Krüppelwalmdach</option><option value="pyramid">Zeltdach</option></select></label>
+<label>Dachneigung °<input id="partSlope" type="number" value="35" min="1" max="70" step="1" style="width:100%"></label>
+</div>
+</div><div style="display:flex;gap:8px;margin-top:14px"><button id="partDelete">Löschen</button><button id="partEditCancel">Abbrechen</button><button id="partEditOK" class="go">Übernehmen</button></div>
+</div></div><div id="partDlg" style="display:none;position:fixed;inset:0;background:#0008;z-index:21;align-items:center;justify-content:center">
+<div style="background:white;padding:18px;border-radius:12px;width:min(90vw,380px)">
+<b>Bauteil auswählen</b>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">
+<button data-part="roof">Zweites Dach</button><button data-part="dormer">Gaube</button>
+<button data-part="chimney">Schornstein</button><button data-part="window">Dachfenster</button>
+</div><button id="partCancel" style="width:100%;margin-top:10px">Abbrechen</button>
+</div></div><div id="edgeDlg" style="display:none;position:fixed;inset:0;background:#0008;z-index:20;align-items:center;justify-content:center">
+<div style="background:white;padding:18px;border-radius:12px;width:min(88vw,360px)">
+<b id="edgeTitle">Kantenlänge</b>
+<div style="margin:12px 0"><input id="edgeVal" type="number" step="0.01" inputmode="decimal" style="width:100%;font-size:20px" placeholder="Meter"></div>
+<div style="display:flex;gap:8px;justify-content:flex-end"><button id="edgeCancel">Abbrechen</button><button id="edgeOK" class="go">Übernehmen</button></div>
+</div></div><div id="w"><canvas id="c"></canvas><div id="view3d" style="display:none;position:absolute;inset:0;background:#f7f8f9;z-index:5"><canvas id="v" style="width:100%;height:100%"></canvas>
+<button id="back2d" style="position:absolute;left:12px;top:12px;z-index:6;background:#17202a;color:white;font-weight:bold">← 2D Zeichnung</button>
+<div id="view3Controls" style="position:absolute;left:10px;right:10px;bottom:12px;z-index:8;background:#ffffffee;border:1px solid #aaa;border-radius:10px;padding:7px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;box-shadow:0 2px 8px #0003">
+<button id="roofViewBtn" class="on">Gesamtdach</button>
+<button id="rafterViewBtn">Sparrenansicht</button>
+<button id="singleFaceBtn">Einzelfläche</button>
+<button id="technicalBtn">📐 Technische Zeichnung</button>
+<button id="measure3Btn">Maße</button>
+</div></div><div id="msg">Dachumriss zeichnen: Punkte setzen und zum Schließen den ersten Punkt antippen.</div></div>
+<script>
+const c=$("#c"),v=$("#v"),x=c.getContext("2d"),g=v.getContext("2d"),PX=45;
+function $(q){return document.querySelector(q)}
+let mode="d",h=[],d=[],hc=true,dc=false,hm=[],dm=[],drag=null,press=null,lastAction=[],cornerDrag=null;
+let viewScale=1,viewX=0,viewY=0,viewTouches=new Map(),viewPinch=null,panView=null;
+function rs(){c.width=c.clientWidth*devicePixelRatio;c.height=c.clientHeight*devicePixelRatio;x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);v.width=v.clientWidth*devicePixelRatio;v.height=v.clientHeight*devicePixelRatio;g.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);dr();d3()}
+addEventListener("resize",rs);
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),near=(a,b,r=22)=>dist(a,b)<r;
+function measure(arr,ms,i){return ms[i]>0?ms[i]:dist(arr[i],arr[(i+1)%arr.length])/PX}
+function pl(a,col,closed,ms){
+ if(!a.length)return;x.beginPath();x.moveTo(a[0].x,a[0].y);a.slice(1).forEach(p=>x.lineTo(p.x,p.y));if(closed)x.closePath();x.strokeStyle=col;x.lineWidth=a===h?6:4;x.stroke();
+ a.forEach((p,i)=>{x.beginPath();x.arc(p.x,p.y,5,0,7);x.fillStyle=col;x.fill();x.fillStyle="#111";x.font="12px Arial";x.fillText("P"+(i+1),p.x+7,p.y-7)});
+ let n=closed?a.length:a.length-1;for(let i=0;i<n;i++){let q=a[i],r=a[(i+1)%a.length],val=measure(a,ms,i);x.fillStyle="#111";x.font="bold 12px Arial";x.fillText(val.toFixed(2)+" m",(q.x+r.x)/2+5,(q.y+r.y)/2-5)}
+}
+function dr(){x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);x.clearRect(0,0,c.clientWidth,c.clientHeight);let GRID=15;x.strokeStyle="#c7cdd2";x.lineWidth=1;for(let a=0;a<c.clientWidth;a+=GRID){x.beginPath();x.moveTo(a,0);x.lineTo(a,c.clientHeight);x.stroke()}for(let a=0;a<c.clientHeight;a+=GRID){x.beginPath();x.moveTo(0,a);x.lineTo(c.clientWidth,a);x.stroke()}x.save();x.translate(viewX,viewY);x.scale(viewScale,viewScale);pl(d,"#198038",dc,dm);drawRoofGuide();drawParts();drawFaceLabels2D();x.restore()}
+function edgeHit(p,a,closed){let n=closed?a.length:a.length-1,best=-1,bd=24;for(let i=0;i<n;i++){let A=a[i],B=a[(i+1)%a.length],vx=B.x-A.x,vy=B.y-A.y,L=vx*vx+vy*vy,t=L?Math.max(0,Math.min(1,((p.x-A.x)*vx+(p.y-A.y)*vy)/L)):0,q={x:A.x+t*vx,y:A.y+t*vy},dd=dist(p,q);if(dd<bd){bd=dd;best=i}}return best}
+let edgeEdit=null;
+function setEdge(a,ms,i){edgeEdit={a,ms,i};$("#edgeTitle").textContent="Dach – Kante K"+(i+1)+" in Meter";$("#edgeVal").value=measure(a,ms,i).toFixed(2);$("#edgeDlg").style.display="flex";setTimeout(()=>{$("#edgeVal").focus();$("#edgeVal").select()},50)}
+$("#edgeCancel").onclick=()=>{$("#edgeDlg").style.display="none";edgeEdit=null};
+$("#edgeOK").onclick=()=>{if(!edgeEdit)return;let {a,ms,i}=edgeEdit,val=parseFloat(String($("#edgeVal").value).replace(",","."));if(!(val>0))return;lastAction.push({kind:"measure",ms,i,old:ms[i]});ms[i]=val;let A=a[i],j=(i+1)%a.length,B=a[j],L=dist(A,B)||1,newL=val*PX,oldB={...B};lastAction.push({kind:"point",a,j,old:oldB});B.x=A.x+(B.x-A.x)/L*newL;B.y=A.y+(B.y-A.y)/L*newL;if(a.length===4){ms[(i+2)%4]=val;let rr=rectFromBounds(a),w=(i%2===0?val:(ms[(i+1)%4]||measure(a,ms,(i+1)%4))),hh=(i%2===1?val:(ms[(i+1)%4]||measure(a,ms,(i+1)%4)));/* visual geometry is squared by button when desired */}$("#edgeDlg").style.display="none";edgeEdit=null;fit2D()};
+function inside(p,a){let z=false;for(let i=0,j=a.length-1;i<a.length;j=i++){let A=a[i],B=a[j];if(((A.y>p.y)!=(B.y>p.y))&&(p.x<(B.x-A.x)*(p.y-A.y)/(B.y-A.y)+A.x))z=!z}return z}
+
+function cornerHit(p,a){let best=-1,bd=24;a.forEach((q,i)=>{let dd=dist(p,q);if(dd<bd){bd=dd;best=i}});return best}
+function rectFromBounds(a){
+ let minx=Math.min(...a.map(p=>p.x)),maxx=Math.max(...a.map(p=>p.x)),miny=Math.min(...a.map(p=>p.y)),maxy=Math.max(...a.map(p=>p.y));
+ // Preserve the user's point order/orientation, but make a true rectangle.
+ let corners=[{x:minx,y:miny},{x:maxx,y:miny},{x:maxx,y:maxy},{x:minx,y:maxy}];
+ let first=a[0],k=0,bd=1e9;corners.forEach((q,i)=>{let z=dist(first,q);if(z<bd){bd=z;k=i}});
+ let cw=[corners[k],corners[(k+1)%4],corners[(k+2)%4],corners[(k+3)%4]];
+ let cc=[corners[k],corners[(k+3)%4],corners[(k+2)%4],corners[(k+1)%4]];
+ return dist(a[1],cw[1])<=dist(a[1],cc[1])?cw:cc
+}
+function make90(a,ms){
+ if(a.length!==4)return;
+ let old=a.map(p=>({...p}));lastAction.push({kind:"shape",a,old});
+ let cx=a.reduce((z,p)=>z+p.x,0)/4,cy=a.reduce((z,p)=>z+p.y,0)/4;
+ let w=(ms[0]>0?ms[0]*PX:(dist(a[0],a[1])+dist(a[2],a[3]))/2);
+ let hh=(ms[1]>0?ms[1]*PX:(dist(a[1],a[2])+dist(a[3],a[0]))/2);
+ let ang=Math.atan2(old[1].y-old[0].y,old[1].x-old[0].x),co=Math.cos(ang),si=Math.sin(ang);
+ // P1-P2 is deliberately horizontal on the screen after 90°.
+ let pts=[{x:cx-w/2,y:cy-hh/2},{x:cx+w/2,y:cy-hh/2},{x:cx+w/2,y:cy+hh/2},{x:cx-w/2,y:cy+hh/2}];
+ a.forEach((p,i)=>Object.assign(p,pts[i]));
+ // Existing components inherit the same straightening instead of staying skewed.
+ if(view3Mode==="roof") parts.forEach(p=>{
+   let pc={x:p.x+p.w/2,y:p.y+p.h/2},dx=pc.x-cx,dy=pc.y-cy;
+   let lx= dx*co+dy*si, ly=-dx*si+dy*co;
+   p.x=cx+lx-p.w/2;p.y=cy+ly-p.h/2;
+   p.rot=(p.rot||0)-ang*180/Math.PI;
+ });
+ ms[0]=ms[2]=w/PX;ms[1]=ms[3]=hh/PX;dr()
+}
+$("#squareBtn").onclick=()=>{if(!dc||d.length!==4){$("#msg").textContent="Erst den Dachumriss als Viereck schließen.";return}make90(d,dm);fit2D();$("#msg").textContent="Dachumriss exakt auf 90° gestellt."};
+
+function md(m){mode="d"}$("#bd").onclick=()=>{mode="d";$("#bd").classList.add("on")};
+c.onpointerdown=e=>{c.setPointerCapture(e.pointerId);let r=c.getBoundingClientRect(),p={x:(e.clientX-r.left-viewX)/viewScale,y:(e.clientY-r.top-viewY)/viewScale},a=d,closed=dc,ms=dm;
+ let tk=triHit(p);if(tk){openTri(tk);return}
+  let pi=partAt(p);if(pi>=0){selectedPart=pi;let q=parts[pi];partPress={i:pi,start:{...p},t:Date.now(),moved:false};partDrag={i:pi,ox:p.x-q.x,oy:p.y-q.y,old:{...q}};$("#msg").textContent=q.name+": ziehen = verschieben · kurz tippen = Maße/Position";return}
+ selectedPart=-1;dr();
+ if(closed){let ci=cornerHit(p,a);if(ci>=0){cornerDrag={a,i:ci,old:a.map(q=>({...q}))};$("#msg").textContent="Eckpunkt ziehen.";return}let ei=edgeHit(p,a,true);if(ei>=0){press={p,t:Date.now(),a,ms,ei,moved:false};return}if(inside(p,a)){press={p,t:Date.now(),a,ms,ei:-1,moved:false};return}return}
+ if(a.length>=3&&near(p,a[0])){dc=true;lastAction.push({kind:"close",m:mode});$("#msg").textContent="Dach fertig. Kante antippen = Metermaß. Eckpunkte ziehen; länger in Fläche drücken = verschieben.";dr();return}
+ a.push(p);ms.push(0);lastAction.push({kind:"add",a,ms});dr()
+};
+c.onpointermove=e=>{let rr=c.getBoundingClientRect(),pp={x:(e.clientX-rr.left-viewX)/viewScale,y:(e.clientY-rr.top-viewY)/viewScale};if(partDrag){let q=parts[partDrag.i];q.x=pp.x-partDrag.ox;q.y=pp.y-partDrag.oy;if(partPress&&dist(pp,partPress.start)>5/viewScale)partPress.moved=true;/* P10.20: live einklinken */snapPartToRoof(q);$("#activeFace").value=String(q.face||1);dr();d3();return}if(cornerDrag){cornerDrag.a[cornerDrag.i].x=pp.x;cornerDrag.a[cornerDrag.i].y=pp.y;dr();return}if(!press)return;let r=c.getBoundingClientRect(),p={x:(e.clientX-r.left-viewX)/viewScale,y:(e.clientY-r.top-viewY)/viewScale};if(dist(p,press.p)>8/viewScale)press.moved=true;
+ if(!drag&&press.ei<0&&Date.now()-press.t>450){drag={a:press.a,start:p,base:press.a.map(q=>({...q}))};$("#msg").textContent="Gesamten Umriss verschieben."}
+ if(drag){let dx=p.x-drag.start.x,dy=p.y-drag.start.y;drag.a.forEach((q,i)=>{q.x=drag.base[i].x+dx;q.y=drag.base[i].y+dy});dr()}
+};
+c.onpointerup=e=>{if(partDrag){let pd=partDrag,pp=partPress;partDrag=null;partPress=null;if(pp&&!pp.moved&&Date.now()-pp.t<650)editPart(pd.i);else {snapPartToRoof(parts[pd.i]);lastAction.push({kind:"partmove",i:pd.i,old:pd.old});$("#activeFace").value=String(parts[pd.i].face);$("#msg").textContent=parts[pd.i].name+" auf "+faceName(parts[pd.i].face)+" eingeklinkt.";}dr();d3();return}if(cornerDrag){lastAction.push({kind:"shape",a:cornerDrag.a,old:cornerDrag.old});cornerDrag=null;dr();return}if(!press)return;if(drag){lastAction.push({kind:"move",a:drag.a,old:drag.base});drag=null;press=null;dr();return}if(!press.moved&&Date.now()-press.t<650&&press.ei>=0)setEdge(press.a,press.ms,press.ei);press=null};
+
+c.onpointercancel=e=>{partDrag=null;partPress=null;cornerDrag=null;drag=null;press=null};
+$("#neu").onclick=()=>{h=[];d=[];hm=[];dm=[];parts=[];selectedPart=-1;hc=true;dc=false;lastAction=[];viewScale=1;viewX=viewY=0;walmRun=null;walmRise=null;mode="d";$("#bd").classList.add("on");updateRoofData();dr();d3()};
+let undo=document.createElement("button");undo.textContent="↶ Schritt zurück";$("#neu").before(undo);undo.onclick=()=>{let z=lastAction.pop();if(!z)return;if(z.kind==="add"){z.a.pop();z.ms.pop()}else if(z.kind==="close"){dc=false}else if(z.kind==="measure")z.ms[z.i]=z.old;else if(z.kind==="point")z.a[z.j]=z.old;else if(z.kind==="move"||z.kind==="shape")z.a.forEach((q,i)=>Object.assign(q,z.old[i]));else if(z.kind==="partmove"&&parts[z.i])Object.assign(parts[z.i],z.old);dr()};
+
+let parts=[],partDrag=null,partPress=null,partEdit=-1,selectedPart=-1;
+function addPart(type){
+ let names={roof:"Zweites Dach",dormer:"Gaube",chimney:"Schornstein",window:"Dachfenster"};
+ let dims={roof:[4,3,2],dormer:[2.5,1.8,1.5],chimney:[.8,.6,1.2],window:[1.2,.9,.15]}[type];
+ let cx=(c.clientWidth/2-viewX)/viewScale,cy=(c.clientHeight/2-viewY)/viewScale;
+ parts.push({type,name:names[type],x:cx-dims[0]*PX/2,y:cy-dims[1]*PX/2,w:dims[0]*PX,h:dims[1]*PX,H:dims[2],roofType:"gable",slope:35,dormerType:"shed",rot:0,face:+($("#activeFace").value||1)});
+ selectedPart=parts.length-1;
+ snapPartToRoof(parts[selectedPart]);
+ $("#msg").textContent=names[type]+" eingesetzt und auf "+faceName(parts[selectedPart].face)+" eingeklinkt. Mit dem Finger verschieben.";dr();d3()
+}
+function drawParts(){
+ let B=roofBox();
+ parts.forEach((p,idx)=>{
+   let cx=p.x+p.w/2,cy=p.y+p.h/2,ang=(p.rot||0)*Math.PI/180,sel=idx===selectedPart;
+   x.save();x.translate(cx,cy);x.rotate(ang);x.lineWidth=(sel?3:2)/viewScale;
+   x.setLineDash(sel?[7/viewScale,4/viewScale]:[]);
+   x.strokeStyle=p.type==="chimney"?"#7b4b32":p.type==="window"?"#1565c0":"#8e44ad";
+   x.fillStyle=p.type==="chimney"?"#8d6e6366":p.type==="window"?"#64b5f666":"#ba68c844";
+   x.fillRect(-p.w/2,-p.h/2,p.w,p.h);x.strokeRect(-p.w/2,-p.h/2,p.w,p.h);x.setLineDash([]);
+   // No ruler/dimension clutter until this component is selected.
+   if(sel){x.fillStyle="#111";x.font=(12/viewScale)+"px Arial";x.fillText(p.name+" "+(p.w/PX).toFixed(2)+"×"+(p.h/PX).toFixed(2)+" m · S"+(p.face||1),-p.w/2+5/viewScale,-p.h/2+16/viewScale)}
+   x.restore();
+   if(sel&&B){
+     let pm=placeMetrics(p);x.save();x.strokeStyle="#555";x.lineWidth=1/viewScale;x.setLineDash([4/viewScale,3/viewScale]);x.font=(11/viewScale)+"px Arial";x.fillStyle="#333";
+     x.beginPath();x.moveTo(B.minx,cy);x.lineTo(p.x,cy);x.stroke();x.fillText(pm.left.toFixed(2)+" m",(B.minx+p.x)/2,cy-4/viewScale);
+     x.beginPath();x.moveTo(cx,B.maxy);x.lineTo(cx,p.y+p.h);x.stroke();x.fillText(pm.eave.toFixed(2)+" m",cx+4/viewScale,(B.maxy+p.y+p.h)/2);x.restore()
+   }
+ })
+}
+function partAt(pt){for(let i=parts.length-1;i>=0;i--){let q=parts[i];if(pt.x>=q.x-12/viewScale&&pt.x<=q.x+q.w+12/viewScale&&pt.y>=q.y-12/viewScale&&pt.y<=q.y+q.h+12/viewScale)return i}return -1}
+
+function roofBox(){
+ if(!d.length)return null;
+ return {minx:Math.min(...d.map(q=>q.x)),maxx:Math.max(...d.map(q=>q.x)),miny:Math.min(...d.map(q=>q.y)),maxy:Math.max(...d.map(q=>q.y))}
+}
+function partCenter(p){return{x:p.x+p.w/2,y:p.y+p.h/2}}
+function placeMetrics(p){
+ let B=roofBox(),C=partCenter(p);if(!B)return{left:0,eave:0};
+ return {left:(C.x-B.minx-p.w/2)/PX,eave:(B.maxy-C.y-p.h/2)/PX}
+}
+function setPartPlacement(p,left,eave){
+ let B=roofBox();if(!B)return;
+ if(left>=0)p.x=B.minx+left*PX;
+ if(eave>=0)p.y=B.maxy-eave*PX-p.h
+}
+function editPart(i){partEdit=i;let p=parts[i];$("#partEditTitle").textContent=p.name;$("#partL").value=(p.w/PX).toFixed(2);$("#partB").value=(p.h/PX).toFixed(2);$("#partH").value=(p.H||0).toFixed(2);$("#partRoofFields").style.display=p.type==="roof"?"grid":"none";$("#dormerTypeLbl").style.display=p.type==="dormer"?"block":"none";$("#dormerType").value=p.dormerType||"shed";refreshFaceSelectors(); $("#partFace").value=String(p.face||+($("#activeFace").value||1));let pm=placeMetrics(p);$("#partLeft").value=pm.left.toFixed(2);$("#partEave").value=pm.eave.toFixed(2);$("#partRot").value=p.rot||0;$("#partRoofType").value=p.roofType||"gable";$("#partSlope").value=p.slope||35;$("#partEditDlg").style.display="flex"}
+$("#partBtn").onclick=()=>$("#partDlg").style.display="flex";$("#partCancel").onclick=()=>$("#partDlg").style.display="none";
+document.querySelectorAll("[data-part]").forEach(b=>b.onclick=()=>{$("#partDlg").style.display="none";addPart(b.dataset.part)});
+$("#partEditCancel").onclick=()=>{$("#partEditDlg").style.display="none";partEdit=-1};
+$("#partEditOK").onclick=()=>{if(partEdit<0)return;let p=parts[partEdit],L=parseFloat(String($("#partL").value).replace(",",".")),B=parseFloat(String($("#partB").value).replace(",",".")),H=parseFloat(String($("#partH").value).replace(",","."));if(L>0)p.w=L*PX;if(B>0)p.h=B*PX;if(H>=0)p.H=H;let PL=parseFloat(String($("#partLeft").value).replace(",",".")),PE=parseFloat(String($("#partEave").value).replace(",","."));p.rot=parseFloat(String($("#partRot").value).replace(",","."))||0;p.face=+($("#partFace").value||$("#activeFace").value||1);setPartPlacement(p,PL,PE);snapPartToRoof(p);if(p.type==="roof"){p.roofType=$("#partRoofType").value;p.slope=Math.max(1,+$("#partSlope").value||35)}if(p.type==="dormer")p.dormerType=$("#dormerType").value;$("#partEditDlg").style.display="none";partEdit=-1;dr();d3()};
+$("#partDelete").onclick=()=>{if(partEdit>=0)parts.splice(partEdit,1);$("#partEditDlg").style.display="none";partEdit=-1;dr();d3()};
+
+
+
+// P10.19: Bauteile rasten beim Verschieben automatisch in die Dachfläche ein.
+function pointInPoly(pt,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){let a=poly[i],b=poly[j];if(((a.y>pt.y)!=(b.y>pt.y))&&(pt.x<(b.x-a.x)*(pt.y-a.y)/((b.y-a.y)||1e-9)+a.x))inside=!inside}return inside}
+function closestPointSeg(p,a,b){let vx=b.x-a.x,vy=b.y-a.y,l2=vx*vx+vy*vy||1,t=((p.x-a.x)*vx+(p.y-a.y)*vy)/l2;t=Math.max(0,Math.min(1,t));return{x:a.x+t*vx,y:a.y+t*vy}}
+function clampToRoof(pt){if(!d.length||pointInPoly(pt,d))return pt;let best=null,bd=Infinity;for(let i=0;i<d.length;i++){let q=closestPointSeg(pt,d[i],d[(i+1)%d.length]),dd=(q.x-pt.x)**2+(q.y-pt.y)**2;if(dd<bd){bd=dd;best=q}}return best||pt}
+function autoFaceAt(pt){let B=roofBox(),typ=$("#roofType").value;if(!B)return 1;let cx=(B.minx+B.maxx)/2,cy=(B.miny+B.maxy)/2;if(typ==="gable")return pt.y<=cy?1:2;let dx=(pt.x-cx)/Math.max(1,(B.maxx-B.minx)/2),dy=(pt.y-cy)/Math.max(1,(B.maxy-B.miny)/2);if(Math.abs(dy)>=Math.abs(dx))return dy<0?1:3;return dx>0?2:4}
+function rotatedPartCorners(p){
+ let cx=p.x+p.w/2,cy=p.y+p.h/2,a=(p.rot||0)*Math.PI/180,co=Math.cos(a),si=Math.sin(a);
+ return [[-p.w/2,-p.h/2],[p.w/2,-p.h/2],[p.w/2,p.h/2],[-p.w/2,p.h/2]].map(([lx,ly])=>({x:cx+lx*co-ly*si,y:cy+lx*si+ly*co}))
+}
+function snapPartToRoof(p){
+ if(!dc||d.length<3)return;let C=clampToRoof(partCenter(p));p.face=autoFaceAt(C);let B=roofBox();
+ if(p.type==="window"&&B){let step=.75*PX,k=Math.round((C.x-B.minx)/step-.5);C.x=B.minx+(k+.5)*step;C=clampToRoof(C)}
+ p.x=C.x-p.w/2;p.y=C.y-p.h/2;
+ for(let tries=0;tries<16;tries++){let bad=rotatedPartCorners(p).filter(q=>!pointInPoly(q,d));if(!bad.length)break;let dx=0,dy=0;bad.forEach(b=>{let q=clampToRoof(b);dx+=q.x-b.x;dy+=q.y-b.y});dx/=bad.length;dy/=bad.length;if(Math.hypot(dx,dy)<.01)break;p.x+=dx;p.y+=dy}
+ p.face=autoFaceAt(partCenter(p));
+ // Gaube automatisch mit der Stirnseite zur Traufe ausrichten.
+ // S1 oben, S2 rechts, S3 unten, S4 links; beim Satteldach S1/S2 = oben/unten.
+ if(p.type==="dormer"){
+   let typ=$("#roofType").value;
+   p.rot=typ==="gable"?(p.face===1?0:180):({1:0,2:90,3:180,4:270}[p.face]||0);
+ }
+}
+
+function fit2D(){
+ let all=[...d];if(!all.length){viewScale=1;viewX=viewY=0;dr();return}
+ let minx=Math.min(...all.map(p=>p.x)),maxx=Math.max(...all.map(p=>p.x)),miny=Math.min(...all.map(p=>p.y)),maxy=Math.max(...all.map(p=>p.y));
+ let pad=45,w=Math.max(1,maxx-minx),hh=Math.max(1,maxy-miny);
+ viewScale=Math.min((c.clientWidth-pad*2)/w,(c.clientHeight-pad*2)/hh,2);
+ viewScale=Math.max(.08,viewScale);
+ viewX=(c.clientWidth-w*viewScale)/2-minx*viewScale;
+ viewY=(c.clientHeight-hh*viewScale)/2-miny*viewScale;dr()
+}
+$("#fitBtn").onclick=fit2D;
+
+function roofFaceCount(){let t=$("#roofType").value;return t==="gable"?2:4}
+function faceName(i){let t=$("#roofType").value;
+ if(t==="gable")return "Dachseite "+i+(i===1?" · Hauptfläche 1":" · Hauptfläche 2");
+ if(t==="halfhip"){let a=[" · Hauptfläche 1"," · Krüppelwalm rechts"," · Hauptfläche 2"," · Krüppelwalm links"];return "Dachseite "+i+(a[i-1]||"")}
+ let a=[" · oben"," · rechts"," · unten"," · links"];return "Dachseite "+i+(a[i-1]||"")
+}
+function refreshFaceSelectors(){
+ let n=roofFaceCount(),a=$("#activeFace"),b=$("#partFace"),av=+a.value||1,bv=+b.value||av;
+ [a,b].forEach(sel=>{sel.innerHTML="";for(let i=1;i<=n;i++){let o=document.createElement("option");o.value=i;o.textContent=faceName(i);sel.appendChild(o)}});
+ a.value=String(Math.min(av,n));b.value=String(Math.min(bv,n));
+}
+function drawFaceLabels2D(){
+ if(!dc||d.length!==4)return;let minx=Math.min(...d.map(p=>p.x)),maxx=Math.max(...d.map(p=>p.x)),miny=Math.min(...d.map(p=>p.y)),maxy=Math.max(...d.map(p=>p.y)),cx=(minx+maxx)/2,cy=(miny+maxy)/2,n=roofFaceCount(),act=+($("#activeFace").value||1);
+ let pts=n===2?[{x:cx,y:miny+(cy-miny)*.45},{x:cx,y:cy+(maxy-cy)*.55}]:[{x:cx,y:miny+(cy-miny)*.42},{x:cx+(maxx-cx)*.58,y:cy},{x:cx,y:cy+(maxy-cy)*.58},{x:minx+(cx-minx)*.42,y:cy}];
+ x.save();pts.forEach((p,i)=>{let on=i+1===act,t="S"+(i+1);x.font="bold "+(13/viewScale)+"px Arial";let w=x.measureText(t).width+12/viewScale;x.fillStyle=on?"#176b2c":"#ffffffdd";x.strokeStyle=on?"#176b2c":"#666";x.lineWidth=1/viewScale;x.fillRect(p.x-w/2,p.y-11/viewScale,w,20/viewScale);x.strokeRect(p.x-w/2,p.y-11/viewScale,w,20/viewScale);x.fillStyle=on?"#fff":"#222";x.textAlign="center";x.fillText(t,p.x,p.y+4/viewScale)});x.restore();
+}
+refreshFaceSelectors();
+$("#activeFace").onchange=()=>{dr();$("#msg").textContent="Aktive Dachfläche: "+faceName(+$("#activeFace").value)+" · neue Bauteile werden dieser Seite zugeordnet."};
+function modelCoords(){
+ if(!dc||d.length!==4)return null;
+ let minx=Math.min(...d.map(p=>p.x)),miny=Math.min(...d.map(p=>p.y));
+ return {D:d.map(p=>({x:(p.x-minx)/PX,y:(p.y-miny)/PX}))}
+}
+let rotX=-0.55,rotZ=-0.65,zoom3=1,drag3=null,techPanX=0,techPanY=0;
+let view3Mode="roof",show3Measures=false,measureLabelOffsets={},singleFace=false,technicalMode=false;
+function set3Mode(m){
+ technicalMode=false;
+ singleFace=false;
+ view3Mode=m;
+ show3Measures=false;
+ $("#roofViewBtn").classList.toggle("on",m==="roof");
+ $("#rafterViewBtn").classList.toggle("on",m==="rafters");
+ $("#singleFaceBtn").classList.remove("on");
+ $("#technicalBtn").classList.remove("on");
+ $("#measure3Btn").classList.remove("on");
+ $("#measure3Btn").disabled=m!=="rafters";
+ d3()
+}
+$("#roofViewBtn").onclick=()=>{singleFace=false;$("#singleFaceBtn").classList.remove("on");set3Mode("roof")};
+$("#rafterViewBtn").onclick=()=>{singleFace=false;$("#singleFaceBtn").classList.remove("on");set3Mode("rafters")};
+$("#measure3Btn").onclick=()=>{show3Measures=!show3Measures;$("#measure3Btn").classList.toggle("on",show3Measures);d3()};
+$("#singleFaceBtn").onclick=()=>{technicalMode=false;singleFace=!singleFace;view3Mode="rafters";show3Measures=true;$("#singleFaceBtn").classList.toggle("on",singleFace);$("#rafterViewBtn").classList.add("on");$("#roofViewBtn").classList.remove("on");$("#measure3Btn").disabled=false;$("#measure3Btn").classList.add("on");d3()};
+$("#technicalBtn").onclick=()=>{technicalMode=true;techPanX=0;techPanY=0;zoom3=1;singleFace=false;view3Mode="rafters";show3Measures=false;$("#roofViewBtn").classList.remove("on");$("#rafterViewBtn").classList.remove("on");$("#singleFaceBtn").classList.remove("on");$("#technicalBtn").classList.add("on");$("#measure3Btn").disabled=true;$("#measure3Btn").classList.remove("on");d3()};
+
+
+let walmRun=null,walmRise=null,triEdit=null;
+function isWalm(){let t=$("#roofType").value;return t==="hip"||t==="halfhip"}
+function updateRoofData(){
+ let box=$("#roofData"),txt=$("#roofDataText");
+ if(!isWalm()){box.style.display="none";return}
+ box.style.display="block";
+ let ang=(walmRun>0&&walmRise>0)?Math.atan2(walmRise,walmRun)*180/Math.PI:null;
+ txt.textContent="Lauf "+(walmRun? walmRun.toFixed(2)+" m":"–")+" · Höhe "+(walmRise? walmRise.toFixed(2)+" m":"–")+" · Neigung "+(ang?ang.toFixed(1)+"°":"–")
+}
+function openTri(kind){
+ triEdit=kind;$("#triTitle").textContent=kind==="run"?"Walm-Dreieck – Lauf in Meter":"Walm-Dreieck – Höhe in Meter";
+ $("#triVal").value=(kind==="run"?walmRun:walmRise)||"";$("#triDlg").style.display="flex";
+ setTimeout(()=>{$("#triVal").focus();$("#triVal").select()},50)
+}
+$("#triCancel").onclick=()=>{$("#triDlg").style.display="none";triEdit=null};
+$("#triOK").onclick=()=>{let v=parseFloat(String($("#triVal").value).replace(",","."));if(!(v>0))return;if(triEdit==="run")walmRun=v;else walmRise=v;$("#triDlg").style.display="none";triEdit=null;updateRoofData();dr();d3()};
+function guideGeom(){
+ if(!dc||d.length!==4||!isWalm())return null;
+ let minx=Math.min(...d.map(p=>p.x)),maxx=Math.max(...d.map(p=>p.x)),miny=Math.min(...d.map(p=>p.y)),maxy=Math.max(...d.map(p=>p.y));
+ let cx=(minx+maxx)/2,cy=(miny+maxy)/2;
+ // Simple plan guide: Walm triangle at the short end of the roof.
+ let horizontal=(maxx-minx)>=(maxy-miny);
+ if(horizontal)return {T:{x:minx,y:cy},F:{x:cx,y:cy},H:{x:cx,y:cy-70/viewScale}};
+ return {T:{x:cx,y:miny},F:{x:cx,y:cy},H:{x:cx+70/viewScale,y:cy}}
+}
+function pointSegDist(p,A,B){let vx=B.x-A.x,vy=B.y-A.y,L=vx*vx+vy*vy,t=L?Math.max(0,Math.min(1,((p.x-A.x)*vx+(p.y-A.y)*vy)/L)):0;return dist(p,{x:A.x+t*vx,y:A.y+t*vy})}
+function triHit(p){
+ let G=guideGeom();if(!G)return null;
+ if(pointSegDist(p,G.T,G.F)<18/viewScale)return"run";
+ if(pointSegDist(p,G.F,G.H)<18/viewScale)return"rise";
+ return null
+}
+function drawRoofGuide(){
+ let G=guideGeom();if(!G)return;
+ x.save();x.strokeStyle="#d32f2f";x.lineWidth=3/viewScale;x.setLineDash([6/viewScale,4/viewScale]);
+ x.beginPath();x.moveTo(G.T.x,G.T.y);x.lineTo(G.F.x,G.F.y);x.lineTo(G.H.x,G.H.y);x.stroke();x.setLineDash([]);
+ x.fillStyle="#d32f2f";x.font=(12/viewScale)+"px Arial";
+ x.fillText("Lauf"+(walmRun?" "+walmRun.toFixed(2)+" m":""),(G.T.x+G.F.x)/2,G.T.y-7/viewScale);
+ x.fillText("Höhe"+(walmRise?" "+walmRise.toFixed(2)+" m":""),G.H.x+5/viewScale,(G.F.y+G.H.y)/2);
+ x.restore()
+}
+function roofCalc(D,typ){
+ let L=D.map((p,i)=>dist(p,D[(i+1)%4])),e=(L[0]+L[2]>=L[1]+L[3])?0:1,op=(e+2)%4,a=D[e],b=D[(e+1)%4],c2=D[op],dd=D[(op+1)%4];
+ let direct=dist(a,dd)+dist(b,c2),oa=direct<=dist(a,c2)+dist(b,dd)?dd:c2,ob=direct<=dist(a,c2)+dist(b,dd)?c2:dd;
+ let m1={x:(a.x+oa.x)/2,y:(a.y+oa.y)/2},m2={x:(b.x+ob.x)/2,y:(b.y+ob.y)/2},axis=dist(m1,m2),span=(dist(a,oa)+dist(b,ob))/2;
+ let run=(walmRun>0?walmRun:span/2),rise=(walmRise>0?walmRise:run*Math.tan(35*Math.PI/180));
+ let angle=Math.atan2(rise,run)*180/Math.PI;
+ let ridge=typ==="pyramid"?0:Math.max(.01,axis-2*run);
+ if(typ==="gable"){angle=35;rise=span/2*Math.tan(angle*Math.PI/180);ridge=axis}
+ let ux=(m2.x-m1.x)/(axis||1),uy=(m2.y-m1.y)/(axis||1),cx=(m1.x+m2.x)/2,cy=(m1.y+m2.y)/2;
+ let r1={x:cx-ux*ridge/2,y:cy-uy*ridge/2},r2={x:cx+ux*ridge/2,y:cy+uy*ridge/2};
+ return {a,b,oa,ob,m1,m2,r1,r2,span,axis,len:axis,rise,angle,ridge}
+}
+
+
+function arrow2(x1,y1,x2,y2){
+ let a=Math.atan2(y2-y1,x2-x1),L=8;g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();
+ [[x1,y1,a],[x2,y2,a+Math.PI]].forEach(z=>{g.beginPath();g.moveTo(z[0],z[1]);g.lineTo(z[0]+Math.cos(z[2]+.45)*L,z[1]+Math.sin(z[2]+.45)*L);g.moveTo(z[0],z[1]);g.lineTo(z[0]+Math.cos(z[2]-.45)*L,z[1]+Math.sin(z[2]-.45)*L);g.stroke()})
+}
+function dim2(P,Q,txt,off=18){
+ let dx=Q.x-P.x,dy=Q.y-P.y,L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L,A={x:P.x+nx*off,y:P.y+ny*off},B={x:Q.x+nx*off,y:Q.y+ny*off};
+ g.save();g.strokeStyle="#222";g.fillStyle="#111";g.lineWidth=1;g.beginPath();g.moveTo(P.x,P.y);g.lineTo(A.x,A.y);g.moveTo(Q.x,Q.y);g.lineTo(B.x,B.y);g.stroke();arrow2(A.x,A.y,B.x,B.y);
+ g.font="bold 12px Arial";let mx=(A.x+B.x)/2,my=(A.y+B.y)/2,tw=g.measureText(txt).width+8;g.fillStyle="#fff";g.fillRect(mx-tw/2,my-15,tw,18);g.fillStyle="#111";g.fillText(txt,mx-tw/2+4,my-2);g.restore()
+}
+function drawSingleFaceTechnical(Q,typ,rise){
+ let W=g.canvas.width,H=g.canvas.height,m=70,rw=Math.max(1,Q.len),rh=Math.max(1,Q.span/2),sc=Math.min((W-2*m)/rw,(H-2*m)/rh),ox=(W-rw*sc)/2,oy=(H-rh*sc)/2;
+ let A={x:ox,y:oy+rh*sc},B={x:ox+rw*sc,y:oy+rh*sc},C={x:ox+rw*sc,y:oy},D={x:ox,y:oy};
+ g.save();g.fillStyle="#fff";g.fillRect(0,0,W,H);g.strokeStyle="#111";g.lineWidth=3;g.strokeRect(ox,oy,rw*sc,rh*sc);
+ let n=Math.max(1,Math.ceil(rw/.75));g.lineWidth=1.5;g.strokeStyle="#6d4c41";
+ for(let i=0;i<=n;i++){let xx=ox+(i/n)*rw*sc;g.beginPath();g.moveTo(xx,A.y);g.lineTo(xx,D.y);g.stroke()}
+ let win=parts.find(z=>z.type==="window");
+ if(win){let ww=Math.min(rw*.22,win.w/PX)*sc,wh=Math.min(rh*.42,win.h/PX)*sc,wx=ox+rw*sc*.58-ww/2,wy=oy+rh*sc*.52-wh/2;g.fillStyle="#fff";g.fillRect(wx-5,wy-5,ww+10,wh+10);g.strokeStyle="#1565c0";g.lineWidth=3;g.strokeRect(wx,wy,ww,wh);g.strokeStyle="#6d4c41";g.lineWidth=4;g.beginPath();g.moveTo(wx-8,wy);g.lineTo(wx+ww+8,wy);g.moveTo(wx-8,wy+wh);g.lineTo(wx+ww+8,wy+wh);g.moveTo(wx,wy-8);g.lineTo(wx,wy+wh+8);g.moveTo(wx+ww,wy-8);g.lineTo(wx+ww,wy+wh+8);g.stroke()}
+ if(show3Measures){dim2(A,B,"Traufe "+rw.toFixed(2)+" m",28);dim2(A,D,"Sparren "+Math.hypot(rh,rise/PX).toFixed(2)+" m",-34);if(typ==="hip")dim2(D,C,"First "+Q.ridge.toFixed(2)+" m",-28)}
+ g.fillStyle="#111";g.font="bold 15px Arial";g.fillText("Technische Einzelfläche · Sparren / Wechsel / Bemaßung",18,28);
+ if(show3Measures){g.font="12px Arial";g.fillText("Achsabstand Sparren ca. 0,75 m",18,47)}g.restore()
+}
+
+function drawTechnicalPlan(Q,typ){
+  const W=v.clientWidth,H=v.clientHeight, pad=55;
+  g.save();g.fillStyle="#fff";g.fillRect(0,0,W,H);
+  let L=Math.max(.01,Q.len), S=Math.max(.01,Q.span), sc=Math.min((W-2*pad)/L,(H-2*pad)/S)*Math.max(.35,Math.min(3,zoom3));
+  let ox=(W-L*sc)/2+techPanX, oy=(H-S*sc)/2+techPanY;
+  const P=(u,w)=>({x:ox+u*sc,y:oy+w*sc});
+  const rwcm=Math.max(4,+($("#rafterW").value||8)), rhcm=Math.max(8,+($("#rafterH").value||24));
+   const woodLW=Math.max(1.4,Math.min(9,(rwcm/100)*sc));
+   const ln=(A,B,col="#6d4c41",lw=woodLW)=>{g.beginPath();g.moveTo(A.x,A.y);g.lineTo(B.x,B.y);g.strokeStyle=col;g.lineWidth=lw;g.stroke()};
+  const txt=(t,x,y,align="center")=>{if(zoom3<1.15 && (t.startsWith("S ")||t.startsWith("Sch ")))return;g.font="bold 10px Arial";g.textAlign=align;let m=g.measureText(t).width;g.fillStyle="rgba(255,255,255,.92)";g.fillRect(x-(align==="center"?m/2:0)-3,y-13,m+6,17);g.fillStyle="#111";g.fillText(t,x,y)};
+  // Dachflächen in der technischen Draufsicht klar voneinander trennen.
+  // Die roten Linien sind First/Grat; jede Fläche erhält zusätzlich S1...S4.
+  const faceFill=(poly,label,cx,cy)=>{
+    g.beginPath();g.moveTo(poly[0].x,poly[0].y);poly.slice(1).forEach(q=>g.lineTo(q.x,q.y));g.closePath();
+    g.fillStyle="rgba(23,107,44,.045)";g.fill();g.strokeStyle="#777";g.lineWidth=1;g.stroke();
+    g.font="bold 14px Arial";g.textAlign="center";let tw=g.measureText(label).width+12;
+    g.fillStyle="rgba(255,255,255,.92)";g.fillRect(cx-tw/2,cy-14,tw,20);g.strokeStyle="#666";g.strokeRect(cx-tw/2,cy-14,tw,20);g.fillStyle="#111";g.fillText(label,cx,cy+1);
+  };
+  let run=(typ==="gable"?S/2:Math.min(S/2, Math.max(0,(L-Q.ridge)/2)));
+  if(typ==="pyramid")run=L/2;
+  if(typ==="gable"){
+    faceFill([P(0,0),P(L,0),P(L,S/2),P(0,S/2)],"Dachseite 1 · S1",P(L*.5,S*.25).x,P(L*.5,S*.25).y);
+    faceFill([P(0,S/2),P(L,S/2),P(L,S),P(0,S)],"Dachseite 2 · S2",P(L*.5,S*.75).x,P(L*.5,S*.75).y);
+  }else if(typ==="pyramid"){
+    let C=P(L/2,S/2);
+    faceFill([P(0,0),P(L,0),C],"S1",P(L*.5,S*.18).x,P(L*.5,S*.18).y);
+    faceFill([P(L,0),P(L,S),C],"S2",P(L*.82,S*.5).x,P(L*.82,S*.5).y);
+    faceFill([P(0,S),P(L,S),C],"S3",P(L*.5,S*.82).x,P(L*.5,S*.82).y);
+    faceFill([P(0,0),C,P(0,S)],"S4",P(L*.18,S*.5).x,P(L*.18,S*.5).y);
+  }else{
+    let r=Math.max(0,Math.min(L/2,(L-Q.ridge)/2)),R0=P(r,S/2),R1=P(L-r,S/2);
+    faceFill([P(0,0),P(L,0),R1,R0],"Dachseite 1 · S1",P(L*.5,S*.22).x,P(L*.5,S*.22).y);
+    faceFill([P(L,0),P(L,S),R1],"Dachseite 2 · S2",P(L-r*.35,S*.5).x,P(L-r*.35,S*.5).y);
+    faceFill([P(0,S),P(L,S),R1,R0],"Dachseite 3 · S3",P(L*.5,S*.78).x,P(L*.5,S*.78).y);
+    faceFill([P(0,0),R0,P(0,S)],"Dachseite 4 · S4",P(r*.35,S*.5).x,P(r*.35,S*.5).y);
+  }
+  // Außenkontur obenauf nochmals kräftig zeichnen.
+  g.strokeStyle="#111";g.lineWidth=3;g.strokeRect(ox,oy,L*sc,S*sc);
+  if(typ==="pyramid")run=L/2;
+  if(typ==="gable"){
+    let R0=P(0,S/2),R1=P(L,S/2);ln(R0,R1,"#b71c1c",4);
+    let n=Math.max(1,Math.ceil(L/.75));
+    for(let i=0;i<=n;i++){let u=L*i/n,A=P(u,0),B=P(u,S/2),C=P(u,S);ln(A,B);ln(C,B);let sl=Math.hypot(S/2,Q.rise);txt("S "+sl.toFixed(2)+" m",A.x+4,(A.y+B.y)/2,"left");txt("S "+sl.toFixed(2)+" m",C.x+4,(C.y+B.y)/2,"left");}
+    txt("First "+L.toFixed(2)+" m",(R0.x+R1.x)/2,R0.y-10);
+  }else if(typ==="pyramid"){
+    let C=P(L/2,S/2), corners=[P(0,0),P(L,0),P(L,S),P(0,S)];
+    corners.forEach(A=>ln(A,C,"#b71c1c",4));
+    [[0,0,L,0],[L,0,L,S],[L,S,0,S],[0,S,0,0]].forEach((e,ei)=>{
+      let dx=e[2]-e[0],dy=e[3]-e[1],EL=Math.hypot(dx,dy),n=Math.max(1,Math.ceil(EL/.75));
+      for(let i=1;i<n;i++){let t=i/n,E=P(e[0]+dx*t,e[1]+dy*t);ln(E,C)}
+    });
+    txt("Hochpunkt",C.x,C.y-10);
+  }else{
+    let r=Math.max(0,Math.min(L/2,(L-Q.ridge)/2)), R0=P(r,S/2),R1=P(L-r,S/2);
+    ln(R0,R1,"#b71c1c",4); [[P(0,0),R0],[P(0,S),R0],[P(L,0),R1],[P(L,S),R1]].forEach(z=>ln(z[0],z[1],"#b71c1c",4));
+    // Sparren im 0,75-m-Raster: Vollsparren bis First, Schifter in den Walmzonen bis Grat.
+     let n=Math.max(1,Math.ceil(L/.75));
+     for(let i=0;i<=n;i++){let u=L*i/n;if(u>=r-1e-6&&u<=L-r+1e-6){let A=P(u,0),B=P(u,S/2),C=P(u,S);ln(A,B);ln(C,B);let sl=Math.hypot(S/2,Q.rise);txt("S "+sl.toFixed(2)+" m",A.x+5,(A.y+B.y)/2,"left");txt("S "+sl.toFixed(2)+" m",C.x+5,(C.y+B.y)/2,"left");}else if(u<r){let f=u/Math.max(r,1e-9),A=P(u,0),B=P(u,S/2*f),C=P(u,S),E=P(u,S-S/2*f);ln(A,B);ln(C,E);let sl=Math.hypot(S/2*f,Q.rise*f);txt("Sch "+sl.toFixed(2)+" m",A.x+4,(A.y+B.y)/2,"left");txt("Sch "+sl.toFixed(2)+" m",C.x+4,(C.y+E.y)/2,"left");}else{let f=(L-u)/Math.max(r,1e-9),A=P(u,0),B=P(u,S/2*f),C=P(u,S),E=P(u,S-S/2*f);ln(A,B);ln(C,E);let sl=Math.hypot(S/2*f,Q.rise*f);txt("Sch "+sl.toFixed(2)+" m",A.x+4,(A.y+B.y)/2,"left");txt("Sch "+sl.toFixed(2)+" m",C.x+4,(C.y+E.y)/2,"left");}}
+     // Stirn-Walm: Schifter rechtwinklig von der Traufe nach innen, jeweils bis zum Grat.
+     let ns=Math.max(1,Math.ceil(S/.75));
+     for(let i=1;i<ns;i++){let w=S*i/ns,f=w<=S/2?w/(S/2):(S-w)/(S/2),yy=w<=S/2?(S/2)*f:S-(S/2)*f;ln(P(0,w),P(r*f,yy));ln(P(L,w),P(L-r*f,yy));}
+     txt("First "+Q.ridge.toFixed(2)+" m",(R0.x+R1.x)/2,R0.y-10);
+    let gl=Math.hypot(Math.hypot(r,S/2),Q.rise);txt("Grat "+gl.toFixed(2)+" m",(P(0,0).x+R0.x)/2,(P(0,0).y+R0.y)/2-7);
+  }
+  // ruhige Außenbemaßung
+  dim2(P(0,S),P(L,S),"Traufe "+L.toFixed(2)+" m",30);
+  dim2(P(0,0),P(0,S),"Grundmaß "+S.toFixed(2)+" m",-34);
+  let step=L/Math.max(1,Math.ceil(L/.75)); dim2(P(0,S),P(step,S),"a = "+step.toFixed(2)+" m",52);
+  g.textAlign="left";g.fillStyle="#111";g.font="bold 16px Arial";g.fillText("TECHNISCHE DRAUFSICHT · SPARRENPLAN · Einzelmaße · 1 Finger = verschieben · 2 Finger = zoomen",18,28);
+  g.font="12px Arial";g.fillText("Sparren "+rwcm+" × "+rhcm+" cm · Achsmaß ≤ 0,75 m · Detailmaße ab Zoom sichtbar",18,47);
+  g.restore();
+}
+
+function d3(){
+ let W=v.clientWidth,Hh=v.clientHeight;g.clearRect(0,0,W,Hh);g.fillStyle="#f7f8f9";g.fillRect(0,0,W,Hh);
+ let M=modelCoords();if(!M){g.fillStyle="#555";g.font="15px Arial";g.fillText("Haus und Dach als Viereck schließen",16,28);return}
+ let typ=$("#roofType").value,D=M.D,Q=roofCalc(D,typ),n=Q.angle,a=Q.a,b=Q.b,oa=Q.oa,ob=Q.ob,rise=Q.rise;
+ if(technicalMode){drawTechnicalPlan(Q,typ);return}
+ let minx=Math.min(...D.map(p=>p.x)),maxx=Math.max(...D.map(p=>p.x)),miny=Math.min(...D.map(p=>p.y)),maxy=Math.max(...D.map(p=>p.y)),ww=maxx-minx,hh=maxy-miny;
+ let sc=Math.min(W/(ww+hh+2),Hh/(rise+(ww+hh)*.5+2))*.68*zoom3,mx=(minx+maxx)/2,my=(miny+maxy)/2;
+ // Top/side only: positive screen elevation always means roof rises toward viewer.
+ let rx=Math.max(-1.30,Math.min(-0.18,rotX));
+ const I=(p,z=0)=>{let X=p.x-mx,Y=p.y-my,cz=Math.cos(rotZ),sz=Math.sin(rotZ),xr=X*cz-Y*sz,yr=X*sz+Y*cz;return{x:W/2+xr*sc,y:Hh*.56+yr*sc*.38-z*sc*.72}};
+ if(singleFace && view3Mode==="rafters"){drawSingleFaceTechnical(Q,typ,rise);return}
+ let E=D.map(p=>I(p,0)),idx=p=>D.indexOf(p),A=E[idx(a)],B=E[idx(b)],OA=E[idx(oa)],OB=E[idx(ob)];
+ function face(P,fill){if(view3Mode==="rafters")return;g.beginPath();g.moveTo(P[0].x,P[0].y);P.slice(1).forEach(q=>g.lineTo(q.x,q.y));g.closePath();g.fillStyle=fill;g.fill();g.strokeStyle="#176b2c";g.lineWidth=2.5;g.stroke()}
+ let m1=Q.m1,m2=Q.m2;
+ if(typ==="gable"){
+   let R1=I(m1,rise),R2=I(m2,rise);face([A,B,R2,R1],"#dfe9df");face([OA,OB,R2,R1],"#edf3ed");
+   g.beginPath();g.moveTo(R1.x,R1.y);g.lineTo(R2.x,R2.y);g.strokeStyle="#d32f2f";g.lineWidth=6;g.stroke()
+ }else if(typ==="pyramid"){
+   let C=I({x:(a.x+b.x+oa.x+ob.x)/4,y:(a.y+b.y+oa.y+ob.y)/4},rise);
+   [[A,B],[B,OB],[OB,OA],[OA,A]].forEach((z,i)=>face([z[0],z[1],C],i%2?"#edf3ed":"#dfe9df"))
+ }else{
+   let R1=I(Q.r1,rise),R2=I(Q.r2,rise);
+   face([A,B,R2,R1],"#dfe9df");face([OA,OB,R2,R1],"#edf3ed");face([A,OA,R1],"#e7efe7");face([B,OB,R2],"#e7efe7");
+   g.beginPath();g.moveTo(R1.x,R1.y);g.lineTo(R2.x,R2.y);g.strokeStyle="#d32f2f";g.lineWidth=5;g.stroke()
+ }
+
+ if(view3Mode==="rafters"){
+   // Konstruktive Sparrenaufteilung: Achsabstand 0,75 m, nicht nur optisch verteilt.
+   const SP=0.75;
+   let EA=I(a,0),EB=I(b,0),EOA=I(oa,0),EOB=I(ob,0);
+   g.strokeStyle="#111";g.lineWidth=3;g.beginPath();g.moveTo(EA.x,EA.y);g.lineTo(EB.x,EB.y);g.lineTo(EOB.x,EOB.y);g.lineTo(EOA.x,EOA.y);g.closePath();g.stroke();
+
+   function line3(P,Q,col="#6d4c41",lw=1.6){g.beginPath();g.moveTo(P.x,P.y);g.lineTo(Q.x,Q.y);g.strokeStyle=col;g.lineWidth=lw;g.stroke()}
+   function lab(P,Q,txt,key,off){if(!show3Measures)return;dim2(P,Q,txt,off!==undefined?off:({rafter:18,hip:24,ridge:-22}[key]||18))}
+   function lerp(P,Q,t){return{x:P.x+(Q.x-P.x)*t,y:P.y+(Q.y-P.y)*t}}
+   function axisTs(L){
+     let n=Math.max(1,Math.ceil(L/SP)),out=[];
+     for(let i=0;i<=n;i++)out.push(i/n);
+     return out
+   }
+   function techBase(){
+     if(!show3Measures)return;
+     dim2(EA,EB,"Traufe "+Q.len.toFixed(2)+" m",34);
+     dim2(EA,EOA,"Grundmaß "+Q.span.toFixed(2)+" m",-34);
+     // Achsabstand als technische Kettenmaß-Angabe, ohne die Zeichnung mit 16 gleichen Zahlen zu überladen.
+     let t2=Math.min(1,SP/Math.max(Q.len,.001)),P0=EA,P1=I(lerp(a,b,t2),0);
+     dim2(P0,P1,"a ≈ 0,75 m",54);
+   }
+   techBase();
+
+   if(typ==="gable"){
+     let R1=I(m1,rise),R2=I(m2,rise);line3(R1,R2,"#b71c1c",4);
+     let ts=axisTs(Q.len);
+     ts.forEach((t,k)=>{
+       let e1=lerp(a,b,t),e2=lerp(oa,ob,t),rr=lerp(m1,m2,t),P1=I(e1,0),P2=I(e2,0),R=I(rr,rise);
+       line3(P1,R);line3(P2,R);
+       if(show3Measures && k===Math.floor(ts.length/2))lab(P1,R,"Sparren "+Math.hypot(Q.span/2,rise).toFixed(2)+" m","rafter",20);
+     });
+     if(show3Measures)lab(R1,R2,"First "+Q.len.toFixed(2)+" m","ridge",-26);
+
+   }else if(typ==="pyramid"){
+     let C0={x:(a.x+b.x+oa.x+ob.x)/4,y:(a.y+b.y+oa.y+ob.y)/4},C=I(C0,rise);
+     // vier Grate
+     [a,b,ob,oa].forEach((p,k)=>{
+       let P=I(p,0);line3(P,C,"#b71c1c",3);
+       if(show3Measures)lab(P,C,"Grat "+Math.hypot(dist(p,C0),rise).toFixed(2)+" m","hip",k%2?30:22);
+     });
+     // Schifter auf allen vier Dachflächen im 0,75-m-Raster.
+     [[a,b],[b,ob],[ob,oa],[oa,a]].forEach((edge,ei)=>{
+       let L=dist(edge[0],edge[1]),ts=axisTs(L);
+       ts.slice(1,-1).forEach((t,k)=>{
+         let E=lerp(edge[0],edge[1],t),P=I(E,0);
+         // Gerade von der Traufe Richtung Hochpunkt; endet geometrisch am Grat/Hochpunkt.
+         line3(P,C,"#6d4c41",1.35);
+         if(show3Measures && (k===0 || k===ts.length-3)){
+           let sl=Math.hypot(dist(E,C0),rise);
+           lab(P,C,"Schifter "+sl.toFixed(2)+" m","rafter",ei%2?16:-16);
+         }
+       })
+     });
+
+   }else{
+     let R1=I(Q.r1,rise),R2=I(Q.r2,rise);line3(R1,R2,"#b71c1c",4);
+     // vier Grate
+     [[a,Q.r1],[oa,Q.r1],[b,Q.r2],[ob,Q.r2]].forEach((z,k)=>{
+       let P=I(z[0],0),R=I(z[1],rise);line3(P,R,"#b71c1c",3);
+       if(show3Measures)lab(P,R,"Grat "+Math.hypot(dist(z[0],z[1]),rise).toFixed(2)+" m","hip",k%2?30:22)
+     });
+
+     // Sparren / Schifter im 0,75-m-Raster: Vollsparren bis First, Schifter bis Grat.
+     let ts=axisTs(Q.len),t0=(Q.len-Q.ridge)/(2*Q.len),t1=1-t0;
+     ts.forEach((t,k)=>{
+       let e1=lerp(a,b,t),e2=lerp(oa,ob,t),P1=I(e1,0),P2=I(e2,0);
+       if(t>=t0-1e-6 && t<=t1+1e-6){
+         let u=(t-t0)/Math.max(1e-9,t1-t0),rr=lerp(Q.r1,Q.r2,u),R=I(rr,rise); line3(P1,R);line3(P2,R);
+         if(show3Measures&&k===Math.floor(ts.length/2))lab(P1,R,"Sparren "+Math.hypot(dist(e1,rr),rise).toFixed(2)+" m","rafter",18);
+       }else{
+         let left=t<t0,f=left?t/Math.max(t0,1e-9):(1-t)/Math.max(1-t1,1e-9); f=Math.max(0,Math.min(1,f));
+         let H1=left?lerp(a,Q.r1,f):lerp(b,Q.r2,f),H2=left?lerp(oa,Q.r1,f):lerp(ob,Q.r2,f),z=rise*f;
+         line3(P1,I(H1,z),"#6d4c41",1.45); line3(P2,I(H2,z),"#6d4c41",1.45);
+       }
+     });
+
+     // Stirn-Walm: Schifter laufen gerade nach innen und enden am jeweiligen Grat – nicht an der Firstspitze.
+     [[a,oa,Q.r1],[b,ob,Q.r2]].forEach((set,side)=>{
+       let e0=set[0],e1=set[1],ap=set[2],L=dist(e0,e1),ts2=axisTs(L);
+       ts2.slice(1,-1).forEach((t,k)=>{
+         let E=lerp(e0,e1,t),P=I(E,0),f=t<=.5?t/.5:(1-t)/.5; f=Math.max(0,Math.min(1,f));
+         let hipStart=t<=.5?e0:e1,H=lerp(hipStart,ap,f),z=rise*f,R=I(H,z); line3(P,R,"#6d4c41",1.45);
+         if(show3Measures&&(k===0||k===ts2.length-3))lab(P,R,"Schifter "+Math.hypot(dist(E,H),z).toFixed(2)+" m","rafter",side?18:-18);
+       })
+     });
+     if(show3Measures)lab(R1,R2,"First "+Q.ridge.toFixed(2)+" m","ridge",-28);
+   }
+
+   // Legende der technischen Zeichnung.
+   if(show3Measures){
+     g.save();g.fillStyle="rgba(255,255,255,.94)";g.strokeStyle="#555";g.lineWidth=1;
+     g.fillRect(12,12,238,70);g.strokeRect(12,12,238,70);
+     g.fillStyle="#111";g.font="bold 13px Arial";g.fillText("TECHNISCHE SPARRENANSICHT",22,32);
+     g.font="12px Arial";g.fillText("Sparrenachsmaß: ca. 0,75 m",22,51);
+     g.fillText("Maße: Traufe · First · Grat · Sparren · Schifter",22,69);g.restore()
+   }
+ }
+ // Real 3D components at the same metric position as in the 2D plan.
+ function projPartPoint(px,py,z){return I({x:(px/PX)+(Math.min(...d.map(q=>q.x))/PX),y:(py/PX)+(Math.min(...d.map(q=>q.y))/PX)},z)}
+ // Convert component canvas coordinates through the same common origin used by modelCoords.
+ let minCanvasX=Math.min(...d.map(q=>q.x)),minCanvasY=Math.min(...d.map(q=>q.y));
+ const PP=(px,py,z=0)=>I({x:(px-minCanvasX)/PX,y:(py-minCanvasY)/PX},z);
+ function poly(P,fill,stroke="#555"){g.beginPath();g.moveTo(P[0].x,P[0].y);P.slice(1).forEach(q=>g.lineTo(q.x,q.y));g.closePath();g.fillStyle=fill;g.fill();g.strokeStyle=stroke;g.lineWidth=2;g.stroke()}
+ function roofZCanvas(px,py,face=0){
+  let X=(px-minCanvasX)/PX,Y=(py-minCanvasY)/PX;
+  let minDX=Math.min(...D.map(q=>q.x)),maxDX=Math.max(...D.map(q=>q.x)),minDY=Math.min(...D.map(q=>q.y)),maxDY=Math.max(...D.map(q=>q.y));
+  let cx=(minDX+maxDX)/2,cy=(minDY+maxDY)/2,hx=(maxDX-minDX)/2||1,hy=(maxDY-minDY)/2||1;
+  if(typ==="gable"){
+    let f=face|| (Y<=cy?1:2);
+    return f===1 ? rise*Math.max(0,Math.min(1,(Y-minDY)/hy)) : rise*Math.max(0,Math.min(1,(maxDY-Y)/hy));
+  }
+  if(typ==="pyramid"){
+    let planes=[rise*Math.max(0,Math.min(1,(Y-minDY)/hy)),rise*Math.max(0,Math.min(1,(maxDX-X)/hx)),rise*Math.max(0,Math.min(1,(maxDY-Y)/hy)),rise*Math.max(0,Math.min(1,(X-minDX)/hx))];
+    return face?planes[Math.max(0,Math.min(3,face-1))]:Math.min(...planes);
+  }
+  // Walm/Krüppelwalm: jede Bauteilseite folgt gezielt ihrer gewählten Dachfläche.
+  let run=Math.max(.01,walmRun||Q.span/2),rx=Math.max(.01,run),ry=Math.max(.01,Q.span/2);
+  let planes=[rise*Math.max(0,Math.min(1,(Y-minDY)/ry)),rise*Math.max(0,Math.min(1,(maxDX-X)/rx)),rise*Math.max(0,Math.min(1,(maxDY-Y)/ry)),rise*Math.max(0,Math.min(1,(X-minDX)/rx))];
+  return face?planes[Math.max(0,Math.min(3,face-1))]:Math.min(rise,...planes)
+ }
+ parts.forEach(p=>{
+   let cx=p.x+p.w/2,cy=p.y+p.h/2,ra=(p.rot||0)*Math.PI/180,co=Math.cos(ra),si=Math.sin(ra);
+   const RC=(lx,ly)=>({x:cx+lx*co-ly*si,y:cy+lx*si+ly*co});
+   let C0=RC(-p.w/2,-p.h/2),C1=RC(p.w/2,-p.h/2),C2=RC(p.w/2,p.h/2),C3=RC(-p.w/2,p.h/2);
+   let x0=C0.x,y0=C0.y,x1=C1.x,y1=C1.y,x2=C2.x,y2=C2.y,x3=C3.x,y3=C3.y;
+   let pf=p.face||1,z00=roofZCanvas(x0,y0,pf),z10=roofZCanvas(x1,y1,pf),z11=roofZCanvas(x2,y2,pf),z01=roofZCanvas(x3,y3,pf),z0=(z00+z10+z11+z01)/4,z1=z0+Math.max(.05,p.H||.5);
+   let q0=PP(x0,y0,z00),q1=PP(x1,y1,z10),q2=PP(x2,y2,z11),q3=PP(x3,y3,z01);
+   if(p.type==="chimney"){
+     let t0=PP(x0,y0,z1),t1=PP(x1,y1,z1),t2=PP(x2,y2,z1),t3=PP(x3,y3,z1);
+     poly([q0,q1,t1,t0],"#8d6e63");poly([q1,q2,t2,t1],"#795548");poly([q2,q3,t3,t2],"#6d4c41");poly([t0,t1,t2,t3],"#a1887f")
+   }else if(p.type==="window"){
+     // Window follows the four sampled points of the actual roof plane.
+     poly([q0,q1,q2,q3],"#64b5f6","#1565c0")
+   }else if(p.type==="dormer"){
+     // Dormer starts on the roof surface instead of at ground level.
+     let dt=p.dormerType||"shed",frontBase=Math.max(z00,z10),rearBase=Math.max(z01,z11),H=Math.max(.15,p.H||1);
+     let b0=PP(C0.x,C0.y,z00),b1=PP(C1.x,C1.y,z10),b2=PP(C2.x,C2.y,z11),b3=PP(C3.x,C3.y,z01);
+     if(dt==="flat"){
+       let t0=PP(C0.x,C0.y,frontBase+H),t1=PP(C1.x,C1.y,frontBase+H),t2=PP(C2.x,C2.y,rearBase+H),t3=PP(C3.x,C3.y,rearBase+H);
+       poly([b0,b1,t1,t0],"#ddd");poly([b1,b2,t2,t1],"#d5d5d5");poly([b3,b0,t0,t3],"#d5d5d5");poly([t0,t1,t2,t3],"#c8d8c8")
+     }else if(dt==="gable"){
+       let e0=Math.max(frontBase,rearBase),rA=PP((C0.x+C1.x)/2,(C0.y+C1.y)/2,e0+H),rB=PP((C3.x+C2.x)/2,(C3.y+C2.y)/2,e0+H);
+       poly([b0,b1,rA],"#ddd");poly([b3,b2,rB],"#ddd");poly([b0,b3,rB,rA],"#b7c9b7");poly([b1,b2,rB,rA],"#c8d8c8")
+     }else{
+       // Schleppgaube: sichtbare keilförmige Wangen, vorne/seitlich Dachüberstand,
+       // hinten läuft die Gaube direkt in die Hauptdachfläche ein.
+       let tf=frontBase+H,tr=rearBase+.04;
+       let t0=PP(C0.x,C0.y,tf),t1=PP(C1.x,C1.y,tf),t2=PP(C2.x,C2.y,tr),t3=PP(C3.x,C3.y,tr);
+       poly([b0,b1,t1,t0],"#ddd");                 // Stirn
+       poly([b0,b3,t3,t0],"#d5d5d5");             // linke Dreieck-/Keilwange
+       poly([b1,b2,t2,t1],"#d5d5d5");             // rechte Dreieck-/Keilwange
+       let ov=.15*PX,frontOv=.20*PX;
+       let o0=RC(-p.w/2-ov,-p.h/2-frontOv),o1=RC(p.w/2+ov,-p.h/2-frontOv);
+       let o2=RC(p.w/2+ov,p.h/2),o3=RC(-p.w/2-ov,p.h/2);
+       poly([PP(o0.x,o0.y,tf+.02),PP(o1.x,o1.y,tf+.02),PP(o2.x,o2.y,tr+.02),PP(o3.x,o3.y,tr+.02)],"#c8d8c8")
+     }
+   }else if(p.type==="roof"){
+     let rt=p.roofType||"gable",sl=(p.slope||35)*Math.PI/180,span=(p.h/PX),rr=Math.tan(sl)*span/2,base=z0;
+     let A0=PP(x0,y0,base),A1=PP(x1,y0,base),A2=PP(x1,y1,base),A3=PP(x0,y1,base);
+     if(rt==="pyramid"){
+       let C=PP((x0+x1)/2,(y0+y1)/2,base+rr);poly([A0,A1,C],"#d8e4d8");poly([A1,A2,C],"#edf3ed");poly([A2,A3,C],"#d8e4d8");poly([A3,A0,C],"#edf3ed")
+     }else{
+       let rA=PP(x0,(y0+y1)/2,base+rr),rB=PP(x1,(y0+y1)/2,base+rr);
+       poly([A0,A1,rB,rA],"#d8e4d8","#176b2c");poly([A3,A2,rB,rA],"#edf3ed","#176b2c");
+       if(rt==="hip"||rt==="halfhip"){ /* visible as own roof object; detailed hip geometry follows later */ }
+       g.beginPath();g.moveTo(rA.x,rA.y);g.lineTo(rB.x,rB.y);g.strokeStyle="#d32f2f";g.lineWidth=4;g.stroke()
+     }
+   }
+ });
+
+ let names={gable:"Satteldach",hip:"Walmdach",halfhip:"Krüppelwalmdach",pyramid:"Zeltdach"};
+ g.fillStyle="#17202a";g.font="12px Arial";g.fillText("Bauteile in 3D: "+parts.length,16,Hh-68);g.fillStyle="#17202a";g.font="bold 15px Arial";g.fillText(names[typ]+" · "+n.toFixed(1)+"°"+((typ==="hip"||typ==="halfhip")?" · First "+Q.ridge.toFixed(2)+" m":""),16,Hh-48);g.font="14px Arial";g.fillText((view3Mode==="rafters"?"Sparrenansicht":"Dachansicht")+" · Ziehen = drehen · 2 Finger = zoomen · Bauteile auf gewählter Dachseite",16,Hh-24)
+}
+$("#measure3Btn").disabled=true;
+$("#b3").onclick=()=>{if(!modelCoords()){$("#msg").textContent="Dachumriss zuerst als Viereck schließen.";return}$("#view3d").style.display="block";setTimeout(()=>{rs();d3()},0)};
+$("#back2d").onclick=()=>{$("#view3d").style.display="none";setTimeout(rs,0)};
+
+c.addEventListener("pointerdown",e=>{viewTouches.set(e.pointerId,{x:e.clientX,y:e.clientY});if(viewTouches.size===2){let a=[...viewTouches.values()],dd=dist(a[0],a[1]);viewPinch={d:dd,s:viewScale,x:viewX,y:viewY,mx:(a[0].x+a[1].x)/2,my:(a[0].y+a[1].y)/2}}},true);
+c.addEventListener("pointermove",e=>{if(!viewTouches.has(e.pointerId))return;viewTouches.set(e.pointerId,{x:e.clientX,y:e.clientY});if(viewTouches.size===2&&viewPinch){let a=[...viewTouches.values()],dd=dist(a[0],a[1]),mx=(a[0].x+a[1].x)/2,my=(a[0].y+a[1].y)/2,ns=Math.max(.08,Math.min(5,viewPinch.s*dd/viewPinch.d));let wx=(viewPinch.mx-viewPinch.x)/viewPinch.s,wy=(viewPinch.my-viewPinch.y)/viewPinch.s;viewScale=ns;viewX=mx-wx*ns;viewY=my-wy*ns;dr();e.preventDefault()}},true);
+function endView(e){viewTouches.delete(e.pointerId);if(viewTouches.size<2)viewPinch=null}c.addEventListener("pointerup",endView,true);c.addEventListener("pointercancel",endView,true);
+
+let p3=new Map(),pinch3=null;
+v.onpointerdown=e=>{v.setPointerCapture(e.pointerId);p3.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(p3.size===1)drag3={x:e.clientX,y:e.clientY,rz:rotZ,rx:rotX,px:techPanX,py:techPanY};
+ if(p3.size===2){let a=[...p3.values()];pinch3={d:dist(a[0],a[1]),z:zoom3}}
+};
+v.onpointermove=e=>{if(!p3.has(e.pointerId))return;p3.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(p3.size===1&&drag3){
+   if(technicalMode){techPanX=drag3.px+(e.clientX-drag3.x);techPanY=drag3.py+(e.clientY-drag3.y)}
+   else{rotZ=drag3.rz+(e.clientX-drag3.x)*.008;rotX=Math.max(-1.30,Math.min(-0.18,drag3.rx+(e.clientY-drag3.y)*.006))}
+   d3()
+ }else if(p3.size===2&&pinch3){
+   let a=[...p3.values()],dd=dist(a[0],a[1]);zoom3=Math.max(.20,Math.min(6,pinch3.z*dd/pinch3.d));d3()
+ }
+};
+function end3(e){p3.delete(e.pointerId);drag3=null;if(p3.size<2)pinch3=null}v.onpointerup=end3;v.onpointercancel=end3;
+function roofChanged(){walmRun=null;walmRise=null;refreshFaceSelectors();parts.forEach(p=>{if((p.face||1)>roofFaceCount())p.face=1});updateRoofData();dr();d3()}
+$("#roofType").onchange=roofChanged;$("#rafterW").oninput=()=>d3();$("#rafterH").oninput=()=>d3();refreshFaceSelectors();updateRoofData();rs();mode="d";$("#bd").classList.add("on");$("#msg").textContent="Dachumriss zeichnen: Punkte setzen. Kante antippen = Metermaß.";
+</script></body></html>

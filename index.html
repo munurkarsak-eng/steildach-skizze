@@ -1,7 +1,14 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P5.1</title>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P5.4</title>
 <style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#eef1f3;overflow:hidden}header{height:48px;background:#17202a;color:#fff;padding:13px}#bar{height:50px;background:#fff;padding:6px;display:flex;gap:6px;overflow:auto}button,input{padding:7px;border:1px solid #999;border-radius:7px;background:#fff}button.on,.go{background:#176b2c;color:#fff}#w{height:calc(100vh - 98px);position:relative}canvas{width:100%;height:100%;touch-action:none;background:#fafafa}#v{background:#f7f8f9}#msg{position:absolute;left:8px;bottom:12px;background:#17202ae8;color:#fff;padding:8px;border-radius:7px;font-size:12px}</style></head><body>
-<header><b>Steildach Skizze</b> &nbsp; <small>P5.1 · 21.09.2026</small></header><div id="bar"><button id="bh" class="on">1 Haus</button><button id="bd">2 Dachumriss</button><span>Traufhöhe m</span><input id="th" type="number" value="3.00" min="0" step="0.10" style="width:72px"><span>Neigung °</span><input id="n" type="number" value="35" min="1" max="70" style="width:62px"><button id="b3" class="go">3D Ansicht</button><button id="neu">Neu</button></div>
-<div id="edgeDlg" style="display:none;position:fixed;inset:0;background:#0008;z-index:20;align-items:center;justify-content:center">
+<header><b>Steildach Skizze</b> &nbsp; <small>P5.4 · 21.09.2026</small></header><div id="bar"><button id="bh" class="on">1 Haus</button><button id="bd">2 Dachumriss</button><span>Traufhöhe m</span><input id="th" type="number" value="3.00" min="0" step="0.10" style="width:72px"><span>Neigung °</span><input id="n" type="number" value="35" min="1" max="70" style="width:62px"><button id="partBtn">+ Bauteil</button><button id="b3" class="go">3D Ansicht</button><button id="neu">Neu</button></div>
+<div id="partDlg" style="display:none;position:fixed;inset:0;background:#0008;z-index:21;align-items:center;justify-content:center">
+<div style="background:white;padding:18px;border-radius:12px;width:min(90vw,380px)">
+<b>Bauteil auswählen</b>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">
+<button data-part="roof">Zweites Dach</button><button data-part="dormer">Gaube</button>
+<button data-part="chimney">Schornstein</button><button data-part="window">Dachfenster</button>
+</div><button id="partCancel" style="width:100%;margin-top:10px">Abbrechen</button>
+</div></div><div id="edgeDlg" style="display:none;position:fixed;inset:0;background:#0008;z-index:20;align-items:center;justify-content:center">
 <div style="background:white;padding:18px;border-radius:12px;width:min(88vw,360px)">
 <b id="edgeTitle">Kantenlänge</b>
 <div style="margin:12px 0"><input id="edgeVal" type="number" step="0.01" inputmode="decimal" style="width:100%;font-size:20px" placeholder="Meter"></div>
@@ -20,7 +27,7 @@ function pl(a,col,closed,ms){
  a.forEach((p,i)=>{x.beginPath();x.arc(p.x,p.y,5,0,7);x.fillStyle=col;x.fill();x.fillStyle="#111";x.font="12px Arial";x.fillText("P"+(i+1),p.x+7,p.y-7)});
  let n=closed?a.length:a.length-1;for(let i=0;i<n;i++){let q=a[i],r=a[(i+1)%a.length],val=measure(a,ms,i);x.fillStyle="#111";x.font="bold 12px Arial";x.fillText(val.toFixed(2)+" m",(q.x+r.x)/2+5,(q.y+r.y)/2-5)}
 }
-function dr(){x.clearRect(0,0,c.clientWidth,c.clientHeight);x.strokeStyle="#e2e5e8";x.lineWidth=1;for(let a=0;a<c.clientWidth;a+=PX){x.beginPath();x.moveTo(a,0);x.lineTo(a,c.clientHeight);x.stroke()}for(let a=0;a<c.clientHeight;a+=PX){x.beginPath();x.moveTo(0,a);x.lineTo(c.clientWidth,a);x.stroke()}pl(h,"#0d47a1",hc,hm);pl(d,"#198038",dc,dm)}
+function dr(){x.clearRect(0,0,c.clientWidth,c.clientHeight);let GRID=15;x.strokeStyle="#e2e5e8";x.lineWidth=1;for(let a=0;a<c.clientWidth;a+=GRID){x.beginPath();x.moveTo(a,0);x.lineTo(a,c.clientHeight);x.stroke()}for(let a=0;a<c.clientHeight;a+=GRID){x.beginPath();x.moveTo(0,a);x.lineTo(c.clientWidth,a);x.stroke()}pl(h,"#0d47a1",hc,hm);pl(d,"#198038",dc,dm);drawParts()}
 function edgeHit(p,a,closed){let n=closed?a.length:a.length-1,best=-1,bd=24;for(let i=0;i<n;i++){let A=a[i],B=a[(i+1)%a.length],vx=B.x-A.x,vy=B.y-A.y,L=vx*vx+vy*vy,t=L?Math.max(0,Math.min(1,((p.x-A.x)*vx+(p.y-A.y)*vy)/L)):0,q={x:A.x+t*vx,y:A.y+t*vy},dd=dist(p,q);if(dd<bd){bd=dd;best=i}}return best}
 let edgeEdit=null;
 function setEdge(a,ms,i){edgeEdit={a,ms,i};$("#edgeTitle").textContent=(a===h?"Haus":"Dach")+" – Kante K"+(i+1)+" in Meter";$("#edgeVal").value=measure(a,ms,i).toFixed(2);$("#edgeDlg").style.display="flex";setTimeout(()=>{$("#edgeVal").focus();$("#edgeVal").select()},50)}
@@ -39,8 +46,33 @@ c.onpointermove=e=>{if(!press)return;let r=c.getBoundingClientRect(),p={x:e.clie
  if(drag){let dx=p.x-drag.start.x,dy=p.y-drag.start.y;drag.a.forEach((q,i)=>{q.x=drag.base[i].x+dx;q.y=drag.base[i].y+dy});dr()}
 };
 c.onpointerup=e=>{if(!press)return;if(drag){lastAction.push({kind:"move",a:drag.a,old:drag.base});drag=null;press=null;dr();return}if(!press.moved&&Date.now()-press.t<650&&press.ei>=0)setEdge(press.a,press.ms,press.ei);press=null};
-$("#neu").onclick=()=>{h=[];d=[];hm=[];dm=[];hc=dc=false;lastAction=[];md("h");dr();d3()};
+$("#neu").onclick=()=>{h=[];d=[];hm=[];dm=[];parts=[];hc=dc=false;lastAction=[];md("h");dr();d3()};
 let undo=document.createElement("button");undo.textContent="↶ Schritt zurück";$("#neu").before(undo);undo.onclick=()=>{let z=lastAction.pop();if(!z)return;if(z.kind==="add"){z.a.pop();z.ms.pop()}else if(z.kind==="close"){if(z.m==="h")hc=false;else dc=false}else if(z.kind==="measure")z.ms[z.i]=z.old;else if(z.kind==="point")z.a[z.j]=z.old;else if(z.kind==="move")z.a.forEach((q,i)=>Object.assign(q,z.old[i]));dr()};
+
+let parts=[];
+function addPart(type){
+ let names={roof:"Zweites Dach",dormer:"Gaube",chimney:"Schornstein",window:"Dachfenster"};
+ let w=type==="roof"?150:type==="dormer"?85:type==="chimney"?45:65;
+ let hh=type==="roof"?110:type==="dormer"?65:type==="chimney"?45:90;
+ let cx=c.clientWidth/2,cy=c.clientHeight/2;
+ parts.push({type,name:names[type],x:cx-w/2,y:cy-hh/2,w,h:hh});
+ $("#msg").textContent=names[type]+" eingesetzt. Bauteil länger drücken und verschieben.";
+ dr()
+}
+function drawParts(){
+ parts.forEach((p,i)=>{
+  x.save();x.setLineDash([7,4]);x.lineWidth=3;
+  x.strokeStyle=p.type==="chimney"?"#7b4b32":p.type==="window"?"#1565c0":"#8e44ad";
+  x.fillStyle=p.type==="chimney"?"#8d6e6366":p.type==="window"?"#64b5f666":"#ba68c844";
+  x.fillRect(p.x,p.y,p.w,p.h);x.strokeRect(p.x,p.y,p.w,p.h);x.setLineDash([]);
+  x.fillStyle="#111";x.font="bold 12px Arial";x.fillText(p.name,p.x+5,p.y+16);x.restore()
+ })
+}
+function partAt(p){for(let i=parts.length-1;i>=0;i--){let q=parts[i];if(p.x>=q.x&&p.x<=q.x+q.w&&p.y>=q.y&&p.y<=q.y+q.h)return i}return -1}
+$("#partBtn").onclick=()=>$("#partDlg").style.display="flex";
+$("#partCancel").onclick=()=>$("#partDlg").style.display="none";
+document.querySelectorAll("[data-part]").forEach(b=>b.onclick=()=>{$("#partDlg").style.display="none";addPart(b.dataset.part)});
+
 function modelCoords(){
  if(!hc||!dc||h.length!==4||d.length!==4)return null;
  // Use common 2D origin and one common metric scale. This preserves the visible roof overhang.
@@ -68,7 +100,7 @@ $("#b3").onclick=()=>{if(!modelCoords()){$("#msg").textContent="P5: Haus und Dac
 $("#back2d").onclick=()=>{$("#view3d").style.display="none";setTimeout(rs,0)};
 let p3=new Map(),pinch3=null;
 v.onpointerdown=e=>{v.setPointerCapture(e.pointerId);p3.set(e.pointerId,{x:e.clientX,y:e.clientY});if(p3.size===1)drag3={x:e.clientX,y:e.clientY,rz:rotZ,rx:rotX};if(p3.size===2){let a=[...p3.values()];pinch3={d:dist(a[0],a[1]),z:zoom3}}};
-v.onpointermove=e=>{if(!p3.has(e.pointerId))return;p3.set(e.pointerId,{x:e.clientX,y:e.clientY});if(p3.size===1&&drag3){rotZ=drag3.rz+(e.clientX-drag3.x)*.008;rotX=Math.max(-1.35,Math.min(.2,drag3.rx+(e.clientY-drag3.y)*.006));d3()}else if(p3.size===2&&pinch3){let a=[...p3.values()],dd=dist(a[0],a[1]);zoom3=Math.max(.45,Math.min(3,pinch3.z*dd/pinch3.d));d3()}};
+v.onpointermove=e=>{if(!p3.has(e.pointerId))return;p3.set(e.pointerId,{x:e.clientX,y:e.clientY});if(p3.size===1&&drag3){rotZ=drag3.rz+(e.clientX-drag3.x)*.008;rotX=Math.max(-1.35,Math.min(-0.08,drag3.rx+(e.clientY-drag3.y)*.006));d3()}else if(p3.size===2&&pinch3){let a=[...p3.values()],dd=dist(a[0],a[1]);zoom3=Math.max(.45,Math.min(3,pinch3.z*dd/pinch3.d));d3()}};
 function end3(e){p3.delete(e.pointerId);drag3=null;if(p3.size<2)pinch3=null}v.onpointerup=end3;v.onpointercancel=end3;
 $("#n").oninput=d3;$("#th").oninput=d3;rs();
 </script></body></html>

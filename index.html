@@ -1,7 +1,12 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P5</title>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Steildach P5.1</title>
 <style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#eef1f3;overflow:hidden}header{height:48px;background:#17202a;color:#fff;padding:13px}#bar{height:50px;background:#fff;padding:6px;display:flex;gap:6px;overflow:auto}button,input{padding:7px;border:1px solid #999;border-radius:7px;background:#fff}button.on,.go{background:#176b2c;color:#fff}#w{height:calc(100vh - 98px);position:relative}canvas{width:100%;height:100%;touch-action:none;background:#fafafa}#v{background:#f7f8f9}#msg{position:absolute;left:8px;bottom:12px;background:#17202ae8;color:#fff;padding:8px;border-radius:7px;font-size:12px}</style></head><body>
-<header><b>Steildach Skizze</b> &nbsp; <small>P5 · 21.09.2026</small></header><div id="bar"><button id="bh" class="on">1 Haus</button><button id="bd">2 Dachumriss</button><span>Traufhöhe m</span><input id="th" type="number" value="3.00" min="0" step="0.10" style="width:72px"><span>Neigung °</span><input id="n" type="number" value="35" min="1" max="70" style="width:62px"><button id="b3" class="go">3D Ansicht</button><button id="neu">Neu</button></div>
-<div id="w"><canvas id="c"></canvas><div id="view3d" style="display:none;position:absolute;inset:0;background:#f7f8f9;z-index:5"><canvas id="v" style="width:100%;height:100%"></canvas><button id="back2d" style="position:absolute;left:12px;top:12px;z-index:6;background:#17202a;color:white;font-weight:bold">← 2D Zeichnung</button></div><div id="msg">Hausgrundriss zeichnen: Punkte setzen und zum Schließen den ersten Punkt antippen.</div></div>
+<header><b>Steildach Skizze</b> &nbsp; <small>P5.1 · 21.09.2026</small></header><div id="bar"><button id="bh" class="on">1 Haus</button><button id="bd">2 Dachumriss</button><span>Traufhöhe m</span><input id="th" type="number" value="3.00" min="0" step="0.10" style="width:72px"><span>Neigung °</span><input id="n" type="number" value="35" min="1" max="70" style="width:62px"><button id="b3" class="go">3D Ansicht</button><button id="neu">Neu</button></div>
+<div id="edgeDlg" style="display:none;position:fixed;inset:0;background:#0008;z-index:20;align-items:center;justify-content:center">
+<div style="background:white;padding:18px;border-radius:12px;width:min(88vw,360px)">
+<b id="edgeTitle">Kantenlänge</b>
+<div style="margin:12px 0"><input id="edgeVal" type="number" step="0.01" inputmode="decimal" style="width:100%;font-size:20px" placeholder="Meter"></div>
+<div style="display:flex;gap:8px;justify-content:flex-end"><button id="edgeCancel">Abbrechen</button><button id="edgeOK" class="go">Übernehmen</button></div>
+</div></div><div id="w"><canvas id="c"></canvas><div id="view3d" style="display:none;position:absolute;inset:0;background:#f7f8f9;z-index:5"><canvas id="v" style="width:100%;height:100%"></canvas><button id="back2d" style="position:absolute;left:12px;top:12px;z-index:6;background:#17202a;color:white;font-weight:bold">← 2D Zeichnung</button></div><div id="msg">Hausgrundriss zeichnen: Punkte setzen und zum Schließen den ersten Punkt antippen.</div></div>
 <script>
 const c=$("#c"),v=$("#v"),x=c.getContext("2d"),g=v.getContext("2d"),PX=45;
 function $(q){return document.querySelector(q)}
@@ -16,7 +21,7 @@ function pl(a,col,closed,ms){
  let n=closed?a.length:a.length-1;for(let i=0;i<n;i++){let q=a[i],r=a[(i+1)%a.length],val=measure(a,ms,i);x.fillStyle="#111";x.font="bold 12px Arial";x.fillText(val.toFixed(2)+" m",(q.x+r.x)/2+5,(q.y+r.y)/2-5)}
 }
 function dr(){x.clearRect(0,0,c.clientWidth,c.clientHeight);x.strokeStyle="#e2e5e8";x.lineWidth=1;for(let a=0;a<c.clientWidth;a+=PX){x.beginPath();x.moveTo(a,0);x.lineTo(a,c.clientHeight);x.stroke()}for(let a=0;a<c.clientHeight;a+=PX){x.beginPath();x.moveTo(0,a);x.lineTo(c.clientWidth,a);x.stroke()}pl(h,"#0d47a1",hc,hm);pl(d,"#198038",dc,dm)}
-function edgeHit(p,a,closed){let n=closed?a.length:a.length-1,best=-1,bd=16;for(let i=0;i<n;i++){let A=a[i],B=a[(i+1)%a.length],vx=B.x-A.x,vy=B.y-A.y,L=vx*vx+vy*vy,t=L?Math.max(0,Math.min(1,((p.x-A.x)*vx+(p.y-A.y)*vy)/L)):0,q={x:A.x+t*vx,y:A.y+t*vy},dd=dist(p,q);if(dd<bd){bd=dd;best=i}}return best}
+function edgeHit(p,a,closed){let n=closed?a.length:a.length-1,best=-1,bd=24;for(let i=0;i<n;i++){let A=a[i],B=a[(i+1)%a.length],vx=B.x-A.x,vy=B.y-A.y,L=vx*vx+vy*vy,t=L?Math.max(0,Math.min(1,((p.x-A.x)*vx+(p.y-A.y)*vy)/L)):0,q={x:A.x+t*vx,y:A.y+t*vy},dd=dist(p,q);if(dd<bd){bd=dd;best=i}}return best}
 let edgeEdit=null;
 function setEdge(a,ms,i){edgeEdit={a,ms,i};$("#edgeTitle").textContent=(a===h?"Haus":"Dach")+" – Kante K"+(i+1)+" in Meter";$("#edgeVal").value=measure(a,ms,i).toFixed(2);$("#edgeDlg").style.display="flex";setTimeout(()=>{$("#edgeVal").focus();$("#edgeVal").select()},50)}
 $("#edgeCancel").onclick=()=>{$("#edgeDlg").style.display="none";edgeEdit=null};
@@ -33,7 +38,7 @@ c.onpointermove=e=>{if(!press)return;let r=c.getBoundingClientRect(),p={x:e.clie
  if(!drag&&press.ei<0&&Date.now()-press.t>450){drag={a:press.a,start:p,base:press.a.map(q=>({...q}))};$("#msg").textContent="Gesamten Umriss verschieben."}
  if(drag){let dx=p.x-drag.start.x,dy=p.y-drag.start.y;drag.a.forEach((q,i)=>{q.x=drag.base[i].x+dx;q.y=drag.base[i].y+dy});dr()}
 };
-c.onpointerup=e=>{if(!press)return;if(drag){lastAction.push({kind:"move",a:drag.a,old:drag.base});drag=null;press=null;dr();return}if(!press.moved&&Date.now()-press.t<450&&press.ei>=0)setEdge(press.a,press.ms,press.ei);press=null};
+c.onpointerup=e=>{if(!press)return;if(drag){lastAction.push({kind:"move",a:drag.a,old:drag.base});drag=null;press=null;dr();return}if(!press.moved&&Date.now()-press.t<650&&press.ei>=0)setEdge(press.a,press.ms,press.ei);press=null};
 $("#neu").onclick=()=>{h=[];d=[];hm=[];dm=[];hc=dc=false;lastAction=[];md("h");dr();d3()};
 let undo=document.createElement("button");undo.textContent="↶ Schritt zurück";$("#neu").before(undo);undo.onclick=()=>{let z=lastAction.pop();if(!z)return;if(z.kind==="add"){z.a.pop();z.ms.pop()}else if(z.kind==="close"){if(z.m==="h")hc=false;else dc=false}else if(z.kind==="measure")z.ms[z.i]=z.old;else if(z.kind==="point")z.a[z.j]=z.old;else if(z.kind==="move")z.a.forEach((q,i)=>Object.assign(q,z.old[i]));dr()};
 function modelCoords(){
